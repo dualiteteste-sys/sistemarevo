@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository';
 		import { Configuracao } from '../types';
-		import { snakeToCamel } from '../lib/utils';
-		export class ConfiguracoesRepository extends BaseRepository<Configuracao> {
+		import { IConfiguracoesRepository } from './interfaces';
+		export class ConfiguracoesRepository extends BaseRepository<Configuracao> implements IConfiguracoesRepository {
 		  constructor() {
 		    super('configuracoes');
 		  }
@@ -9,12 +9,11 @@ import { BaseRepository } from './BaseRepository';
 		    return data as Configuracao;
 		  }
 		  async getAllSettings(): Promise<Configuracao[]> {
-		    console.warn('Backend desconectado. Retornando configurações vazias.');
-		    return Promise.resolve([]); // Retorna array vazio para evitar chamadas ao backend
+		    console.warn('[Modo de Construção] Chamada para getAllSettings bloqueada. Retornando configurações vazias.');
+		    return Promise.resolve([]);
 		  }
 		  async saveSettings(settings: { chave: string; valor: any }[]): Promise<void> {
-		    console.warn('Backend desconectado. Simulação de salvamento de configurações.');
-		    console.log('Mock saveSettings:', settings);
-		    return Promise.resolve(); // Não faz nada
+		    console.warn('[Modo de Construção] Chamada para saveSettings bloqueada.');
+		    return Promise.resolve();
 		  }
 		}

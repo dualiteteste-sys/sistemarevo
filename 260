@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
 		import { PostgrestError } from '@supabase/supabase-js';
-		import { snakeToCamel } from '../lib/utils';
 		import { DashboardStats, FaturamentoMensal } from '../types';
 		import { IDashboardRepository } from './interfaces';
 		export class DashboardRepository implements IDashboardRepository {
@@ -12,7 +11,7 @@ import { supabase } from '../lib/supabaseClient';
 		    }
 		  }
 		  async getDashboardStats(): Promise<DashboardStats> {
-		    console.warn('Backend desconectado. Retornando estatísticas zeradas para o Dashboard.');
+		    console.warn('[Modo de Construção] Chamada para getDashboardStats bloqueada. Retornando dados zerados.');
 		    return Promise.resolve({
 		      faturamentoTotalMesAtual: 0,
 		      faturamentoTotalMesAnterior: 0,
@@ -23,7 +22,7 @@ import { supabase } from '../lib/supabaseClient';
 		    });
 		  }
 		  async getFaturamentoMensal(): Promise<FaturamentoMensal[]> {
-		    console.warn('Backend desconectado. Retornando faturamento mensal vazio.');
+		    console.warn('[Modo de Construção] Chamada para getFaturamentoMensal bloqueada. Retornando dados vazios.');
 		    return Promise.resolve([]);
 		  }
 		}
