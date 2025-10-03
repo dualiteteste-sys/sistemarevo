@@ -1,0 +1,49 @@
+import { IRepository, IEntity } from '../types';
+		import { supabase } from '../lib/supabaseClient';
+		import { PostgrestError } from '@supabase/supabase-js';
+		import { snakeToCamel, camelToSnake } from '../lib/utils';
+		import { RepositoryError } from './RepositoryError';
+		export abstract class BaseRepository<T extends IEntity> implements IRepository<T> {
+		  protected supabase = supabase;
+		  protected tableName: string;
+		  constructor(tableName: string) {
+		    this.tableName = tableName;
+		  }
+		  protected handleError(error: PostgrestError | null, context?: string): void {
+		    if (error) {
+		      console.error(`Error in ${this.tableName} repository${context ? ` (${context})` : ''}:`, error);
+		      throw new RepositoryError(error.message, context, {
+		        code: error.code,
+		        details: error.details,
+		        hint: error.hint,
+		      });
+		    }
+		  }
+		  async findAll(
+		    options: { page?: number; pageSize?: number } = {},
+		    select: string = '*'
+		  ): Promise<{ data: T[]; count: number }> {
+		    // Retorna dados vazios para evitar chamadas ao backend
+		    return Promise.resolve({ data: [], count: 0 });
+		  }
+		  async findById(id: string): Promise<T | null> {
+		    // Retorna nulo para evitar chamadas ao backend
+		    return Promise.resolve(null);
+		  }
+		  async create(entity: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
+		    // Simula a criação sem chamar o backend
+		    console.log('Mock create:', entity);
+		    return Promise.resolve({ ...this.createEntity(entity), id: 'mock-id-' + Date.now() } as T);
+		  }
+		  async update(id: string, updates: Partial<T>): Promise<T> {
+		    // Simula a atualização sem chamar o backend
+		    console.log('Mock update:', id, updates);
+		    return Promise.resolve({ id, ...updates } as T);
+		  }
+		  async delete(id: string): Promise<void> {
+		    // Simula a exclusão sem chamar o backend
+		    console.log('Mock delete:', id);
+		    return Promise.resolve();
+		  }
+		  protected abstract createEntity(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): T;
+		}
