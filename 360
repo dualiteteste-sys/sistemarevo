@@ -1,74 +1,45 @@
-import { IEntity } from './base';
-import { ContribuinteICMS } from './cliente';
-
-export enum TipoPessoaVendedor {
-  FISICA = 'Física',
-  JURIDICA = 'Jurídica',
-  ESTRANGEIRO = 'Estrangeiro',
-  ESTRANGEIRO_NO_BRASIL = 'Estrangeiro no Brasil',
-}
-
-export enum SituacaoVendedor {
-  ATIVO_COM_ACESSO = 'Ativo com acesso ao sistema',
-  ATIVO_SEM_ACESSO = 'Ativo sem acesso ao sistema',
-  INATIVO = 'Inativo',
-}
-
-export enum RegraComissao {
-  LIBERACAO_PARCIAL = 'Liberação parcial (pelo pagamento)',
-  LIBERACAO_TOTAL_PEDIDO = 'Liberação total (no faturamento)',
-  LIBERACAO_TOTAL_PAGAMENTO = 'Liberação total (no pagamento)',
-}
-
-export enum TipoComissaoVendedor {
-  FIXA = 'Comissão com alíquota fixa',
-  POR_DESCONTO = 'Comissão com alíquota conforme descontos',
-}
-
-export interface Vendedor extends IEntity {
-  // Identificação
-  nome: string;
-  fantasia?: string;
-  codigo?: string;
-  tipoPessoa: TipoPessoaVendedor;
-  cpfCnpj: string;
-  contribuinte: ContribuinteICMS;
-  inscricaoEstadual?: string;
-  // Endereço
-  cep: string;
-  cidade: string;
-  uf: string;
-  logradouro: string;
-  bairro: string;
-  numero: string;
-  complemento?: string;
-  // Contatos
-  telefone?: string;
-  celular?: string;
-  email: string;
-  // Situação
-  situacao: SituacaoVendedor;
-  deposito?: string;
-  emailComunicacoes?: string;
-  // Acesso
-  usuarioSistema?: string;
-  acessoRestritoHorario: boolean;
-  acessoRestritoIp: boolean;
-  ipsPermitidos?: string;
-  perfilAcessoContatos?: string;
-  modulosAcessiveis: string[];
-  podeIncluirProdutosNaoCadastrados: boolean;
-  podeEmitirCobrancas: boolean;
-  // Comissionamento
-  regraLiberacaoComissao: RegraComissao;
-  tipoComissao: TipoComissaoVendedor;
-  aliquotaComissao?: number;
-  desconsiderarComissaoLinhaProduto: boolean;
-  // Observações
-  observacoes?: string;
-  // Controle Interno
-  ativo: boolean;
-  // Relação com Auth
-  userId?: string;
-  userPermissions?: string[];
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    './src/**/*.{js,jsx,ts,tsx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        glass: {
+          50: 'rgba(255, 255, 255, 0.9)',
+          100: 'rgba(255, 255, 255, 0.8)',
+          200: 'rgba(255, 255, 255, 0.7)',
+          300: 'rgba(255, 255, 255, 0.6)',
+          400: 'rgba(255, 255, 255, 0.5)',
+          500: 'rgba(255, 255, 255, 0.4)',
+        },
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe', 
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        }
+      },
+      backdropBlur: {
+        xs: '2px',
+      },
+      boxShadow: {
+        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+        'glass-sm': '0 2px 16px 0 rgba(31, 38, 135, 0.2)',
+        'glass-lg': '0 12px 40px 0 rgba(31, 38, 135, 0.45)',
+      },
+      borderRadius: {
+        '3xl': '1.5rem',
+        '4xl': '2rem',
+      }
+    },
+  },
+  plugins: [],
 }

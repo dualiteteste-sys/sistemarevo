@@ -1,8 +1,8 @@
-import { DashboardRepository } from '../../repositories/DashboardRepository';
-import { DashboardService } from '../DashboardService';
-import { IDashboardService } from '../interfaces';
+import { DevolucaoVendaRepository } from '../../repositories/DevolucaoVendaRepository';
+import { DevolucaoVendaService } from '../DevolucaoVendaService';
+import { IDevolucaoVendaService } from '../interfaces';
 
-export const createDashboardService = (): IDashboardService => {
-  const repository = new DashboardRepository();
-  return new DashboardService(repository);
+export const createDevolucaoVendaService = (): IDevolucaoVendaService => {
+  const repository = new DevolucaoVendaRepository();
+  return new DevolucaoVendaService(repository);
 };

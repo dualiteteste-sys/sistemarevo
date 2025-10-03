@@ -1,104 +1,76 @@
 import React from 'react';
-import { Control, Controller, UseFormWatch } from 'react-hook-form';
+import { Control, Controller } from 'react-hook-form';
 import { VendedorFormData } from '../../../schemas/vendedorSchema';
-import { GlassInput } from '../../ui/GlassInput';
+import { RegraComissao, TipoComissaoVendedor } from '../../../types';
+import { PercentageInput } from '../../ui/PercentageInput';
 import { InputWrapper } from '../../ui/InputWrapper';
 
-const CheckboxWrapper: React.FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void; helpText?: string; }> = ({ label, checked, onChange, helpText }) => (
-  <div className="flex flex-col">
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="form-checkbox" />
-      <span className="text-sm text-gray-700">{label}</span>
-    </label>
-    {helpText && <p className="text-xs text-gray-500 mt-1 ml-6">{helpText}</p>}
-  </div>
+const RadioWrapper: React.FC<{ label: string; name: string; value: string; checked: boolean; onChange: (value: string) => void; }> = ({ label, name, value, checked, onChange }) => (
+  <label className="flex items-center gap-2 cursor-pointer">
+    <input type="radio" name={name} value={value} checked={checked} onChange={(e) => onChange(e.target.value)} className="form-radio" />
+    <span className="text-sm text-gray-700">{label}</span>
+  </label>
 );
 
-const modulosDisponiveis = [
-  'Clientes', 'Comissões', 'CRM', 'Pedidos de Venda', 'PDV', 'Propostas comerciais',
-  'Relatório de Preços de Produtos', 'Cotação de fretes'
-];
-const perfisContatoDisponiveis = ['Cliente', 'Fornecedor', 'Vendedor', 'Transportador', 'Funcionário', 'Outro'];
-
-interface AcessoPermissoesSectionProps {
+interface ComissionamentoSectionProps {
   control: Control<VendedorFormData>;
-  watch: UseFormWatch<VendedorFormData>;
 }
 
-export const AcessoPermissoesSection: React.FC<AcessoPermissoesSectionProps> = ({ control, watch }) => {
-  const acessoRestritoIp = watch('acessoRestritoIp');
-  const modulosAcessiveis = watch('modulosAcessiveis') || [];
+export const ComissionamentoSection: React.FC<ComissionamentoSectionProps> = ({ control }) => {
+  const tipoComissao = control._getWatch('tipoComissao');
 
   return (
     <section>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Acesso e Permissões</h3>
-      <Controller
-        name="usuarioSistema"
-        control={control}
-        render={({ field }) => (
-          <InputWrapper label="Usuário do Sistema" helpText="A senha de acesso será configurada em um segundo passo, realizado após ser salvo o vendedor.">
-            <GlassInput {...field} value={field.value || ''} disabled />
-          </InputWrapper>
-        )}
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <div className="space-y-4">
-          <Controller name="acessoRestritoHorario" control={control} render={({ field }) => (
-            <CheckboxWrapper label="Acesso restrito por horário" checked={field.value} onChange={field.onChange} />
-          )} />
-          <Controller name="acessoRestritoIp" control={control} render={({ field }) => (
-            <CheckboxWrapper label="Acesso restrito por IP" checked={field.value} onChange={field.onChange} helpText="Utilize esta opção apenas caso tenha IP fixo" />
-          )} />
-          {acessoRestritoIp && (
-            <Controller name="ipsPermitidos" control={control} render={({ field }) => (
-              <InputWrapper label="IPs Permitidos">
-                <GlassInput {...field} value={field.value || ''} />
-              </InputWrapper>
-            )} />
-          )}
-        </div>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Comissionamento</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Controller
-          name="perfilAcessoContatos"
+          name="regraLiberacaoComissao"
           control={control}
           render={({ field }) => (
-            <InputWrapper label="Pode acessar contatos com o perfil">
-              <select className="glass-input" {...field} value={field.value || ''}>
-                <option value="">Selecione...</option>
-                {perfisContatoDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
+            <InputWrapper label="Regras para liberação de comissões">
+              <select className="glass-input" {...field}>
+                {Object.values(RegraComissao).map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </InputWrapper>
           )}
         />
-      </div>
-      <h4 className="font-semibold text-gray-700 mt-6 mb-2">Módulos que podem ser acessados</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {modulosDisponiveis.map(modulo => (
+        <div className="space-y-4">
           <Controller
-            key={modulo}
-            name="modulosAcessiveis"
+            name="tipoComissao"
             control={control}
             render={({ field }) => (
-              <CheckboxWrapper
-                label={modulo}
-                checked={field.value.includes(modulo)}
-                onChange={(checked) => {
-                  const newValue = checked
-                    ? [...field.value, modulo]
-                    : field.value.filter(m => m !== modulo);
-                  field.onChange(newValue);
-                }}
-              />
+              <InputWrapper label="Tipo de comissão">
+                <div className="flex gap-6">
+                  <RadioWrapper label="Comissão com alíquota fixa" name="tipoComissao" value={TipoComissaoVendedor.FIXA} checked={field.value === TipoComissaoVendedor.FIXA} onChange={field.onChange} />
+                  <RadioWrapper label="Comissão com alíquota conforme descontos" name="tipoComissao" value={TipoComissaoVendedor.POR_DESCONTO} checked={field.value === TipoComissaoVendedor.POR_DESCONTO} onChange={field.onChange} />
+                </div>
+              </InputWrapper>
             )}
           />
-        ))}
+          {tipoComissao === TipoComissaoVendedor.FIXA && (
+            <Controller
+              name="aliquotaComissao"
+              control={control}
+              render={({ field }) => (
+                <InputWrapper label="Alíquota de comissão (%)">
+                  <PercentageInput value={field.value ?? 0} onAccept={(v) => field.onChange(parseFloat(v))} />
+                </InputWrapper>
+              )}
+            />
+          )}
+        </div>
       </div>
-      <div className="mt-4 space-y-2">
-        <Controller name="podeIncluirProdutosNaoCadastrados" control={control} render={({ field }) => (
-          <CheckboxWrapper label="Tem permissão para incluir produtos não cadastrados em pedidos de venda e propostas comerciais" checked={field.value} onChange={field.onChange} />
-        )} />
-        <Controller name="podeEmitirCobrancas" control={control} render={({ field }) => (
-          <CheckboxWrapper label="Pode emitir cobranças" checked={field.value} onChange={field.onChange} />
-        )} />
+      <div className="mt-6">
+        <Controller
+          name="desconsiderarComissaoLinhaProduto"
+          control={control}
+          render={({ field }) => (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={field.value} onChange={field.onChange} className="form-checkbox" />
+              <span className="text-sm text-gray-700">Desconsiderar comissionamento por linhas de produto para este vendedor</span>
+            </label>
+          )}
+        />
       </div>
     </section>
   );

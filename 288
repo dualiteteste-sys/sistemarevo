@@ -1,15 +1,25 @@
-import { Comissao } from '../types';
-import { IComissoesService } from './interfaces';
-import { IComissoesRepository } from '../repositories/interfaces';
+import { IConfiguracoesService } from './interfaces';
+		import { ConfiguracoesRepository } from '../repositories/ConfiguracoesRepository';
+		import { Empresa } from '../types/empresa';
 
-export class ComissoesService implements IComissoesService {
-  public repository: IComissoesRepository;
+		export class ConfiguracoesService implements IConfiguracoesService {
+		  public repository: ConfiguracoesRepository;
 
-  constructor(repository: IComissoesRepository) {
-    this.repository = repository;
-  }
+		  constructor(repository: ConfiguracoesRepository) {
+		    this.repository = repository;
+		  }
 
-  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Comissao[]; count: number }> {
-    return this.repository.findAll(options);
-  }
-}
+		  async getEmpresaData(): Promise<Empresa | null> {
+		    return this.repository.findFirst();
+		  }
+
+		  async saveEmpresaData(data: Partial<Empresa>, logoFile?: File | null): Promise<Empresa> {
+		    let logoUrl = data.logoUrl;
+		    if (logoFile) {
+		      logoUrl = await this.repository.uploadLogo(logoFile);
+		    }
+		    
+		    const dataToSave = { ...data, logoUrl };
+		    return this.repository.upsert(dataToSave);
+		  }
+		}

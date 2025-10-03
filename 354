@@ -1,58 +1,73 @@
 import { IEntity } from './base';
 import { Cliente } from './cliente';
+import { Servico } from './servico';
+import { Vendedor } from './vendedor';
 
-export enum FretePorConta {
-    CIF = 'CIF',
-    FOB = 'FOB',
+export enum StatusOS {
+  ABERTA = 'ABERTA',
+  EM_ANDAMENTO = 'EM_ANDAMENTO',
+  FINALIZADA = 'FINALIZADA',
+  CANCELADA = 'CANCELADA',
+  ORCAMENTO = 'ORCAMENTO',
 }
 
-export enum StatusOrdemCompra {
-    ABERTA = 'ABERTA',
-    RECEBIDA = 'RECEBIDA',
-    CANCELADA = 'CANCELADA',
+export enum PrioridadeOS {
+  BAIXA = 'BAIXA',
+  MEDIA = 'MEDIA',
+  ALTA = 'ALTA',
+  URGENTE = 'URGENTE'
 }
 
-export interface OrdemCompraAnexo extends IEntity {
-    ordemCompraId: string;
-    nomeArquivo: string;
-    path: string;
-    tamanho: number;
-    tipo: string;
+export interface OrdemServicoItem extends IEntity {
+  ordemServicoId: string;
+  servicoId?: string;
+  servico?: Servico;
+  descricao: string;
+  codigo?: string;
+  quantidade: number;
+  preco: number;
+  desconto: number;
+  valorTotal: number;
+  orcar: boolean;
 }
 
-export interface OrdemCompraItem extends IEntity {
-    ordemCompraId: string;
-    produtoId?: string;
-    descricao: string;
-    codigo?: string;
-    unidade?: string;
-    quantidade: number;
-    precoUnitario: number;
-    ipi?: number;
-    precoTotal: number;
+export interface OrdemServicoAnexo extends IEntity {
+  ordemServicoId: string;
+  nomeArquivo: string;
+  path: string;
+  tamanho: number;
+  tipo: string;
 }
 
-export interface OrdemCompra extends IEntity {
-    numero: string;
-    fornecedorId: string;
-    fornecedor?: Cliente;
-    itens: OrdemCompraItem[];
-    totalProdutos: number;
-    desconto?: string;
-    frete?: number;
-    totalIpi?: number;
-    totalIcmsSt?: number;
-    totalGeral: number;
-    numeroNoFornecedor?: string;
-    dataCompra: Date;
-    dataPrevista?: Date;
-    condicaoPagamento?: string;
-    categoriaId?: string;
-    transportadorNome?: string;
-    fretePorConta: FretePorConta;
-    observacoes?: string;
-    marcadores?: string[];
-    observacoesInternas?: string;
-    status: StatusOrdemCompra;
-    anexos?: OrdemCompraAnexo[];
+export interface OrdemServico extends IEntity {
+  numero: string;
+  clienteId: string;
+  cliente?: Cliente;
+  descricaoServico?: string;
+  consideracoesFinais?: string;
+  itens: OrdemServicoItem[];
+  dataInicio: Date;
+  dataPrevisao?: Date;
+  hora?: string;
+  dataConclusao?: Date;
+  totalServicos: number;
+  desconto?: string; // Pode ser '10%' ou '100.00'
+  observacoesServico?: string;
+  observacoesInternas?: string;
+  vendedorId?: string;
+  vendedor?: Vendedor;
+  comissaoPercentual?: number;
+  valorComissao?: number;
+  tecnicoId?: string;
+  tecnico?: Vendedor;
+  orcar: boolean;
+  formaRecebimento?: string;
+  meioPagamento?: string;
+  contaBancaria?: string;
+  categoriaFinanceira?: string;
+  condicaoPagamento?: string;
+  anexos: OrdemServicoAnexo[];
+  marcadores?: string[];
+  status: StatusOS;
+  prioridade: PrioridadeOS;
 }

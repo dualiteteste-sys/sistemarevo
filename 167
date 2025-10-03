@@ -1,71 +1,64 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Comissao, StatusComissao } from '../../types';
+import { useState, useCallback, useEffect } from 'react';
+import { ContaPagar } from '../../types';
 import { useService } from '../useService';
 import toast from 'react-hot-toast';
 
-const PAGE_SIZE = 15;
-
-export const useComissoes = () => {
-  const [comissoes, setComissoes] = useState<Comissao[]>([]);
+export const useContasPagar = () => {
+  const service = useService('contasPagar');
+  const [contas, setContas] = useState<ContaPagar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
-  const service = useService('comissoes');
-
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
-
-  const loadComissoes = useCallback(async (page: number) => {
+  const loadContas = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const { data, count } = await service.getAll({ page, pageSize: PAGE_SIZE });
-      setComissoes(data);
-      setTotalItems(count);
-      setCurrentPage(page);
+      const data = await service.getAllContasPagar();
+      setContas(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar comissões';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar contas a pagar';
       setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   }, [service]);
 
-  useEffect(() => {
-    loadComissoes(1);
-  }, [loadComissoes]);
-  
-  const kpis = useMemo(() => {
-    const totalAPagar = comissoes
-      .filter(c => c.status === StatusComissao.LIBERADA)
-      .reduce((sum, c) => sum + c.valorComissao, 0);
-
-    const totalPagoNoMes = comissoes
-      .filter(c => c.status === StatusComissao.PAGA && new Date(c.dataPagamento!).getMonth() === new Date().getMonth())
-      .reduce((sum, c) => sum + c.valorComissao, 0);
-
-    const ranking = comissoes.reduce((acc, c) => {
-        acc[c.vendedorNome] = (acc[c.vendedorNome] || 0) + c.valorComissao;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const topVendedor = Object.entries(ranking).sort((a, b) => b[1] - a[1])[0];
-
-    return [
-      { title: 'Total a Pagar', value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalAPagar) },
-      { title: 'Total Pago no Mês', value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPagoNoMes) },
-      { title: 'Top Vendedor', value: topVendedor ? topVendedor[0] : 'N/A' },
-      { title: 'Mês de Referência', value: new Date().toLocaleString('pt-BR', { month: 'long', year: 'numeric' }) },
-    ];
-  }, [comissoes]);
-
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-      loadComissoes(page);
-    }
+  const liquidarConta = async (id: string) => {
+    const promise = service.liquidarConta(id);
+    toast.promise(promise, {
+      loading: 'Liquidando conta...',
+      success: 'Conta liquidada com sucesso!',
+      error: (err) => `Falha ao liquidar: ${err.message}`,
+    });
+    await promise;
+    await loadContas();
   };
 
-  return { comissoes, loading, error, kpis, loadComissoes, currentPage, totalPages, goToPage };
+  const createConta = async (data: Partial<Omit<ContaPagar, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    const promise = service.createContaPagar(data);
+    toast.promise(promise, {
+        loading: 'Criando conta...',
+        success: 'Conta criada com sucesso!',
+        error: (err) => `Falha ao criar: ${err.message}`,
+    });
+    await promise;
+    await loadContas();
+  };
+  
+  const updateConta = async (id: string, data: Partial<ContaPagar>) => {
+    const promise = service.updateContaPagar(id, data);
+    toast.promise(promise, {
+        loading: 'Atualizando conta...',
+        success: 'Conta atualizada com sucesso!',
+        error: (err) => `Falha ao atualizar: ${err.message}`,
+    });
+    await promise;
+    await loadContas();
+  };
+
+  useEffect(() => {
+    loadContas();
+  }, [loadContas]);
+
+  return { contas, loading, error, loadContas, liquidarConta, createConta, updateConta };
 };

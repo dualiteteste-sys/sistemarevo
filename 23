@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { GlassButton } from '../ui/GlassButton';
 
-interface EnviarBoletosModalProps {
-  onEnviar: (apenasRegistrados: boolean) => void;
+interface GerarCobrancasModalProps {
+  onGerar: () => void;
   onCancel: () => void;
   loading?: boolean;
 }
 
-export const EnviarBoletosModal: React.FC<EnviarBoletosModalProps> = ({ onEnviar, onCancel, loading }) => {
-  const [apenasRegistrados, setApenasRegistrados] = useState(false);
-
+export const GerarCobrancasModal: React.FC<GerarCobrancasModalProps> = ({ onGerar, onCancel, loading }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -26,24 +24,16 @@ export const EnviarBoletosModal: React.FC<EnviarBoletosModalProps> = ({ onEnviar
         className="bg-glass-100 rounded-2xl shadow-glass-lg border border-white/20 p-8 w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-xl font-bold text-gray-800 mb-6">Envio de Boletos para Cobrança</h3>
-        <div className="mb-6">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="form-checkbox"
-              checked={apenasRegistrados}
-              onChange={(e) => setApenasRegistrados(e.target.checked)}
-            />
-            <span className="text-sm text-gray-700">Enviar apenas boletos registrados</span>
-          </label>
-        </div>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Gerar Cobranças do Mês</h3>
+        <p className="text-gray-600 mb-6">
+          A geração das cobranças do mês selecionado pode demorar. Clique no botão "Gerar Cobranças" para iniciar o processo.
+        </p>
         <div className="flex justify-end gap-4">
           <GlassButton variant="secondary" onClick={onCancel} disabled={loading}>
             Cancelar
           </GlassButton>
-          <GlassButton onClick={() => onEnviar(apenasRegistrados)} disabled={loading}>
-            {loading ? 'Enviando...' : 'Iniciar Envio'}
+          <GlassButton onClick={onGerar} disabled={loading}>
+            {loading ? 'Gerando...' : 'Gerar Cobranças'}
           </GlassButton>
         </div>
       </motion.div>

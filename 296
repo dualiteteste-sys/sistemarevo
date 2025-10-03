@@ -1,27 +1,23 @@
-import { Embalagem } from '../types';
-import { IEmbalagemService } from './interfaces';
-import { IEmbalagemRepository } from '../repositories/interfaces';
+import { ProdutoComEstoque, EstoqueMovimento } from '../types';
+import { IEstoqueService } from './interfaces';
+import { IEstoqueRepository } from '../repositories/interfaces';
 
-export class EmbalagemService implements IEmbalagemService {
-  public repository: IEmbalagemRepository;
+export class EstoqueService implements IEstoqueService {
+  private repository: IEstoqueRepository;
 
-  constructor(repository: IEmbalagemRepository) {
+  constructor(repository: IEstoqueRepository) {
     this.repository = repository;
   }
 
-  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Embalagem[]; count: number }> {
+  async getProdutosComEstoque(options: { page?: number; pageSize?: number } = {}): Promise<{ data: ProdutoComEstoque[]; count: number }> {
     return this.repository.findAll(options);
   }
 
-  async create(data: Omit<Embalagem, 'id' | 'createdAt' | 'updatedAt'>): Promise<Embalagem> {
-    return this.repository.create(data);
+  async getHistoricoProduto(produtoId: string): Promise<EstoqueMovimento[]> {
+    return this.repository.findHistoryByProductId(produtoId);
   }
 
-  async update(id: string, data: Partial<Embalagem>): Promise<Embalagem> {
-    return this.repository.update(id, data);
-  }
-
-  async delete(id: string): Promise<void> {
-    return this.repository.delete(id);
+  async createMovimento(movimento: Omit<EstoqueMovimento, 'id' | 'createdAt' | 'updatedAt'>): Promise<EstoqueMovimento> {
+    return this.repository.createMovimento(movimento);
   }
 }

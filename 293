@@ -1,27 +1,19 @@
-import { CrmOportunidade } from '../types';
-import { ICrmService } from './interfaces';
-import { ICrmRepository } from '../repositories/interfaces';
+import { DashboardStats, FaturamentoMensal } from '../types';
+import { IDashboardService } from './interfaces';
+import { IDashboardRepository } from '../repositories/interfaces';
 
-export class CrmService implements ICrmService {
-  public repository: ICrmRepository;
+export class DashboardService implements IDashboardService {
+  public repository: IDashboardRepository;
 
-  constructor(repository: ICrmRepository) {
+  constructor(repository: IDashboardRepository) {
     this.repository = repository;
   }
 
-  async getAll(): Promise<CrmOportunidade[]> {
-    return this.repository.findAll();
+  async getDashboardStats(): Promise<DashboardStats> {
+    return this.repository.getDashboardStats();
   }
 
-  async create(data: Omit<CrmOportunidade, 'id' | 'createdAt' | 'updatedAt'>): Promise<CrmOportunidade> {
-    return this.repository.create(data);
-  }
-
-  async update(id: string, data: Partial<CrmOportunidade>): Promise<CrmOportunidade> {
-    return this.repository.update(id, data);
-  }
-
-  async delete(id: string): Promise<void> {
-    return this.repository.delete(id);
+  async getFaturamentoMensal(): Promise<FaturamentoMensal[]> {
+    return this.repository.getFaturamentoMensal();
   }
 }

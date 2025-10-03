@@ -1,51 +1,118 @@
-import React from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { KanbanCard } from './KanbanCard';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { GenericForm } from '../ui/GenericForm';
 import { CrmOportunidade, CrmEtapa } from '../../types';
-import { GlassCard } from '../ui/GlassCard';
+import toast from 'react-hot-toast';
+import { useFormState } from '../../hooks/useFormState';
+import { AutocompleteInput } from '../ui/AutocompleteInput';
+import { CurrencyInput } from '../ui/CurrencyInput';
+import { InputWrapper } from '../ui/InputWrapper';
+import { useService } from '../../hooks/useService';
 
-interface KanbanColumnProps {
-  etapa: CrmEtapa;
-  title: string;
-  oportunidades: CrmOportunidade[];
-  onEdit: (oportunidade: CrmOportunidade) => void;
+interface OportunidadeFormProps {
+  oportunidade?: CrmOportunidade;
+  onSave: (data: Partial<CrmOportunidade>) => void;
+  onCancel: () => void;
+  loading?: boolean;
 }
 
-export const KanbanColumn: React.FC<KanbanColumnProps> = ({ etapa, title, oportunidades, onEdit }) => {
-  const { setNodeRef, isOver } = useDroppable({ id: etapa });
+const getInitialData = (op?: CrmOportunidade): Partial<CrmOportunidade> => ({
+  id: op?.id,
+  nome: op?.nome || '',
+  clienteId: op?.clienteId || '',
+  cliente: op?.cliente,
+  vendedorId: op?.vendedorId,
+  vendedor: op?.vendedor,
+  valorEstimado: op?.valorEstimado || 0,
+  etapa: op?.etapa || CrmEtapa.LEAD,
+  dataFechamentoPrevista: op?.dataFechamentoPrevista ? new Date(op.dataFechamentoPrevista) : undefined,
+});
 
-  const etapaColors = {
-    [CrmEtapa.LEAD]: 'border-t-gray-400',
-    [CrmEtapa.PROSPECCAO]: 'border-t-blue-500',
-    [CrmEtapa.NEGOCIACAO]: 'border-t-yellow-500',
-    [CrmEtapa.GANHO]: 'border-t-green-500',
-    [CrmEtapa.PERDIDO]: 'border-t-red-500',
+export const OportunidadeForm: React.FC<OportunidadeFormProps> = ({ oportunidade, onSave, onCancel, loading }) => {
+  const getInitial = useCallback(() => getInitialData(oportunidade), [oportunidade]);
+  const { formData, setFormData, handleChange } = useFormState<CrmOportunidade>(getInitial);
+
+  const clienteService = useService('cliente');
+  const vendedorService = useService('vendedor');
+  
+  const [initialClienteLabel, setInitialClienteLabel] = useState('');
+  const [initialVendedorLabel, setInitialVendedorLabel] = useState('');
+
+  useEffect(() => {
+    if (oportunidade?.cliente) setInitialClienteLabel(oportunidade.cliente.nome);
+    if (oportunidade?.vendedor) setInitialVendedorLabel(oportunidade.vendedor.nome);
+  }, [oportunidade]);
+
+  const fetchClientes = useCallback(async (query: string) => {
+    const results = await clienteService.search(query, 'cliente');
+    return results.map(c => ({ value: c.id, label: c.nome }));
+  }, [clienteService]);
+
+  const fetchVendedores = useCallback(async (query: string) => {
+    const results = await vendedorService.search(query);
+    return results.map(v => ({ value: v.id, label: v.nome }));
+  }, [vendedorService]);
+
+  const handleSave = () => {
+    if (!formData.nome?.trim()) {
+      toast.error('O nome da oportunidade é obrigatório.');
+      return;
+    }
+    if (!formData.clienteId) {
+      toast.error('O cliente é obrigatório.');
+      return;
+    }
+    onSave(formData);
   };
 
-  const totalValor = oportunidades.reduce((sum, op) => sum + (op.valorEstimado || 0), 0);
-
   return (
-    <GlassCard className={`flex flex-col border-t-4 ${etapaColors[etapa]} transition-colors duration-300 ${isOver ? 'bg-glass-200' : ''}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-800">{title}</h3>
-        <span className="text-sm font-medium text-gray-500 bg-glass-200 rounded-full px-2 py-1">
-          {oportunidades.length}
-        </span>
+    <GenericForm
+      title={oportunidade?.id ? 'Editar Oportunidade' : 'Nova Oportunidade'}
+      onSave={handleSave}
+      onCancel={onCancel}
+      loading={loading}
+      size="max-w-3xl"
+    >
+      <div className="space-y-6">
+        <InputWrapper label="Nome da Oportunidade *">
+          <input className="glass-input" value={formData.nome} onChange={(e) => handleChange('nome', e.target.value)} />
+        </InputWrapper>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputWrapper label="Cliente *">
+                <AutocompleteInput
+                    value={formData.clienteId || ''}
+                    onValueChange={(id) => handleChange('clienteId', id)}
+                    fetchSuggestions={fetchClientes}
+                    initialLabel={initialClienteLabel}
+                    placeholder="Digite para buscar um cliente..."
+                />
+            </InputWrapper>
+            <InputWrapper label="Vendedor Responsável">
+                <AutocompleteInput
+                    value={formData.vendedorId || ''}
+                    onValueChange={(id) => handleChange('vendedorId', id)}
+                    fetchSuggestions={fetchVendedores}
+                    initialLabel={initialVendedorLabel}
+                    placeholder="Digite para buscar um vendedor..."
+                />
+            </InputWrapper>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputWrapper label="Valor Estimado *">
+                <CurrencyInput value={formData.valorEstimado || 0} onAccept={(v) => handleChange('valorEstimado', parseFloat(v))} />
+            </InputWrapper>
+            <InputWrapper label="Etapa do Funil *">
+                <select className="glass-input" value={formData.etapa} onChange={(e) => handleChange('etapa', e.target.value as CrmEtapa)}>
+                    {Object.values(CrmEtapa).map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
+            </InputWrapper>
+        </div>
+
+        <InputWrapper label="Data de Fechamento Prevista">
+            <input type="date" className="glass-input" value={formData.dataFechamentoPrevista ? new Date(formData.dataFechamentoPrevista).toISOString().split('T')[0] : ''} onChange={(e) => handleChange('dataFechamentoPrevista', e.target.value ? new Date(e.target.value) : undefined)} />
+        </InputWrapper>
       </div>
-      <p className="text-xs text-gray-600 mb-4 -mt-2">
-        Total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor)}
-      </p>
-      <div
-        ref={setNodeRef}
-        className="flex-1 space-y-4 overflow-y-auto min-h-[300px] p-1 -m-1"
-      >
-        <SortableContext items={oportunidades.map(op => op.id)} strategy={verticalListSortingStrategy}>
-          {oportunidades.map(op => (
-            <KanbanCard key={op.id} oportunidade={op} onEdit={() => onEdit(op)} />
-          ))}
-        </SortableContext>
-      </div>
-    </GlassCard>
+    </GenericForm>
   );
 };

@@ -1,10 +1,8 @@
-import { ContasReceberRepository } from '../../repositories/ContasReceberRepository';
-import { FluxoCaixaRepository } from '../../repositories/FluxoCaixaRepository';
-import { ContasReceberService } from '../ContasReceberService';
-import { IContasReceberService } from '../interfaces';
+import { ContratoRepository } from '../../repositories/ContratoRepository';
+import { ContratoService } from '../ContratoService';
+import { IContratoService } from '../interfaces';
 
-export const createContasReceberService = (): IContasReceberService => {
-  const repository = new ContasReceberRepository();
-  const fluxoCaixaRepository = new FluxoCaixaRepository();
-  return new ContasReceberService(repository, fluxoCaixaRepository);
+export const createContratoService = (): IContratoService => {
+  const repository = new ContratoRepository();
+  return new ContratoService(repository);
 };

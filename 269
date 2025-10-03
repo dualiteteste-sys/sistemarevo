@@ -1,24 +1,31 @@
 import { BaseRepository } from './BaseRepository';
-import { FaturaVenda } from '../types';
+		import { OrdemCompra, OrdemCompraItem } from '../types';
+		import { camelToSnake, snakeToCamel } from '../lib/utils';
 
-export class NotaFiscalRepository extends BaseRepository<FaturaVenda> {
-  constructor() {
-    super('faturas_venda');
-  }
+		export class OrdemCompraRepository extends BaseRepository<OrdemCompra> {
+		  constructor() {
+		    super('ordens_compra');
+		  }
 
-  protected createEntity(data: any): FaturaVenda {
-    return data as FaturaVenda;
-  }
+		  protected createEntity(data: any): OrdemCompra {
+		    return data as OrdemCompra;
+		  }
 
-  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: FaturaVenda[]; count: number }> {
-    const selectString = `
-        id, numero_fatura, data_emissao, data_vencimento, valor_total, status,
-        pedido:pedidos_venda!pedido_id (
-          id,
-          numero,
-          cliente:clientes!cliente_id ( id, nome )
-        )
-      `;
-    return super.findAll(options, selectString);
-  }
-}
+		  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: OrdemCompra[]; count: number }> {
+		    console.warn('[Modo de Construção] Chamada para OrdemCompraRepository.findAll bloqueada.');
+		    return { data: [], count: 0 };
+		  }
+
+		  async createWithItems(
+		    ordemData: Partial<Omit<OrdemCompra, 'id' | 'createdAt' | 'updatedAt'>>,
+		    itensData: Omit<OrdemCompraItem, 'id' | 'createdAt' | 'updatedAt' | 'ordemCompraId'>[]
+		  ): Promise<OrdemCompra> {
+		    console.warn('[Modo de Construção] Chamada para OrdemCompraRepository.createWithItems bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+
+		  async findById(id: string): Promise<OrdemCompra | null> {
+		    console.warn('[Modo de Construção] Chamada para OrdemCompraRepository.findById bloqueada.');
+		    return null;
+		  }
+		}

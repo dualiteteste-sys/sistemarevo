@@ -1,86 +1,72 @@
 import React from 'react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { KanbanColumn } from './KanbanColumn';
-import { OrdemServico, StatusOS } from '../../types';
-import toast from 'react-hot-toast';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { motion } from 'framer-motion';
+import { GripVertical, Calendar, User } from 'lucide-react';
+import { OrdemServico, PrioridadeOS } from '../../types';
 
-interface KanbanBoardProps {
-  ordensServico: OrdemServico[];
-  setOrdensServico: React.Dispatch<React.SetStateAction<OrdemServico[]>>;
-  updateOrdemServico: (id: string, data: Partial<OrdemServico>) => Promise<any>;
+interface KanbanCardProps {
+  ordemServico: OrdemServico;
 }
 
-export const KanbanBoard: React.FC<KanbanBoardProps> = ({ ordensServico, setOrdensServico, updateOrdemServico }) => {
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+export const KanbanCard: React.FC<KanbanCardProps> = ({ ordemServico }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ordemServico.id });
 
-  const columns: { title: string; status: StatusOS }[] = [
-    { title: 'Orçamento', status: StatusOS.ORCAMENTO },
-    { title: 'Abertas', status: StatusOS.ABERTA },
-    { title: 'Em Andamento', status: StatusOS.EM_ANDAMENTO },
-    { title: 'Finalizadas', status: StatusOS.FINALIZADA },
-    { title: 'Canceladas', status: StatusOS.CANCELADA },
-  ];
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    boxShadow: isDragging ? '0 10px 20px rgba(0,0,0,0.1)' : 'none',
+  };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+  const prioridadeColors = {
+    [PrioridadeOS.URGENTE]: 'bg-red-100 text-red-700 border-red-200',
+    [PrioridadeOS.ALTA]: 'bg-orange-100 text-orange-700 border-orange-200',
+    [PrioridadeOS.MEDIA]: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    [PrioridadeOS.BAIXA]: 'bg-blue-100 text-blue-700 border-blue-200',
+  };
 
-    if (active && over && active.id !== over.id) {
-      const activeContainer = active.data.current?.sortable.containerId;
-      const overContainer = over.data.current?.sortable.containerId;
-
-      if (activeContainer !== overContainer) {
-        const activeItem = ordensServico.find(os => os.id === active.id);
-        if (activeItem) {
-          const newStatus = overContainer as StatusOS;
-          
-          // Optimistic UI update
-          setOrdensServico(prev => 
-            prev.map(os => 
-              os.id === active.id ? { ...os, status: newStatus } : os
-            )
-          );
-          
-          // Update backend
-          const promise = updateOrdemServico(active.id as string, { status: newStatus });
-          toast.promise(promise, {
-              loading: 'Atualizando status...',
-              success: 'Status atualizado com sucesso!',
-              error: (err) => {
-                // Revert UI on failure
-                setOrdensServico(prev => 
-                  prev.map(os => 
-                    os.id === active.id ? { ...os, status: activeItem.status } : os
-                  )
-                );
-                return `Falha ao atualizar: ${err.message}`;
-              }
-          });
-        }
-      }
-    }
+  const formatDate = (date?: Date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('pt-BR');
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={ordensServico.map(os => os.id)} strategy={horizontalListSortingStrategy}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {columns.map(col => (
-            <KanbanColumn
-              key={col.status}
-              status={col.status}
-              title={col.title}
-              ordensServico={ordensServico.filter(os => os.status === col.status)}
-            />
-          ))}
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      className="p-4 rounded-xl bg-glass-50 backdrop-blur-sm border border-white/20 touch-none"
+      whileHover={{ scale: 1.03 }}
+    >
+      <div className="flex items-start justify-between">
+        <span className={`glass-badge ${prioridadeColors[ordemServico.prioridade]}`}>
+          {ordemServico.prioridade}
+        </span>
+        <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600">
+          <GripVertical size={18} />
         </div>
-      </SortableContext>
-    </DndContext>
+      </div>
+      
+      <h4 className="font-semibold text-gray-800 my-2">{`#${ordemServico.numero}`}</h4>
+      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{ordemServico.descricaoServico || 'Sem descrição'}</p>
+      
+      <div className="text-xs text-gray-500 space-y-2 pt-3 border-t border-white/20">
+        <div className="flex items-center gap-2">
+          <User size={14} />
+          <span>{ordemServico.cliente?.nome || 'Cliente não encontrado'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar size={14} />
+          <span>Previsão: {formatDate(ordemServico.dataPrevisao)}</span>
+        </div>
+      </div>
+    </motion.div>
   );
 };

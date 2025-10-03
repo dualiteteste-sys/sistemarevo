@@ -1,61 +1,86 @@
 /*
-          # [Operation Name]
-          Atualização do ENUM 'contribuinte_icms'
+		          # [Operation Name]
+		          Criação da tabela 'vendedores' e ajuste de 'clientes'
 
-          ## Query Description: [Esta operação irá atualizar o tipo de dado 'contribuinte_icms' para refletir as novas opções fiscais.
-          1. As colunas que usam este tipo serão temporariamente convertidas para TEXT.
-          2. O tipo antigo será removido e o novo será criado com as opções corretas.
-          3. As colunas serão convertidas de volta para o novo tipo, e um novo valor padrão será definido.
-          Esta operação é segura, mas pode falhar se houver dados que não possam ser convertidos para o novo formato.]
-          
-          ## Metadata:
-          - Schema-Category: "Structural"
-          - Impact-Level: "Medium"
-          - Requires-Backup: false
-          - Reversible: false
-          
-          ## Structure Details:
-          - Types affected: contribuinte_icms
-          - Tables affected: clientes, vendedores
-          - Columns affected: contribuinte_icms, contribuinte
-          
-          ## Security Implications:
-          - RLS Status: Unchanged
-          - Policy Changes: No
-          - Auth Requirements: None
-          
-          ## Performance Impact:
-          - Indexes: Unchanged
-          - Triggers: Unchanged
-          - Estimated Impact: Baixo, pode causar um breve bloqueio nas tabelas durante a alteração.
-          */
+		          ## Query Description: [Este script cria a tabela 'vendedores' para armazenar os dados da equipe de vendas e adiciona uma coluna 'vendedor_id' na tabela 'clientes' para criar o relacionamento entre eles. Isso é necessário para o funcionamento do formulário de cadastro de clientes.]
 
--- Step 1: Temporarily change the column type to text
-ALTER TABLE public.clientes ALTER COLUMN contribuinte_icms TYPE TEXT;
-ALTER TABLE public.vendedores ALTER COLUMN contribuinte TYPE TEXT;
+		          ## Metadata:
+		          - Schema-Category: ["Structural"]
+		          - Impact-Level: ["Low"]
+		          - Requires-Backup: [false]
+		          - Reversible: [true]
 
--- Step 2: Drop the old enum type
-DROP TYPE IF EXISTS public.contribuinte_icms;
+		          ## Structure Details:
+		          - Cria a tabela 'vendedores'.
+		          - Adiciona a coluna 'vendedor_id' à tabela 'clientes'.
+		          - Adiciona uma chave estrangeira de 'clientes.vendedor_id' para 'vendedores.id'.
 
--- Step 3: Create the new enum type with the desired values
-CREATE TYPE public.contribuinte_icms AS ENUM (
-    '1 - Contribuinte ICMS',
-    '2 - Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS',
-    '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS'
-);
+		          ## Security Implications:
+		          - RLS Status: [Enabled]
+		          - Policy Changes: [Yes]
+		          - Auth Requirements: [authenticated]
 
--- Step 4: Change the column type back to the new enum and set the new default
--- This will fail if there are existing values that don't match the new enum.
--- We'll handle this by updating non-matching values to the new default.
-UPDATE public.clientes SET contribuinte_icms = '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS' WHERE contribuinte_icms NOT IN ('1 - Contribuinte ICMS', '2 - Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS');
-UPDATE public.vendedores SET contribuinte = '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS' WHERE contribuinte NOT IN ('1 - Contribuinte ICMS', '2 - Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS');
+		          ## Performance Impact:
+		          - Indexes: [Added]
+		          - Triggers: [No]
+		          - Estimated Impact: [Baixo]
+		          */
 
-ALTER TABLE public.clientes
-  ALTER COLUMN contribuinte_icms TYPE public.contribuinte_icms
-  USING contribuinte_icms::text::contribuinte_icms,
-  ALTER COLUMN contribuinte_icms SET DEFAULT '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS';
+		-- Tabela para Vendedores
+		CREATE TABLE IF NOT EXISTS public.vendedores (
+		    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+		    user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
+		    nome text NOT NULL,
+		    fantasia text,
+		    codigo text,
+		    tipo_pessoa tipo_pessoa_vendedor DEFAULT 'Física',
+		    cpf_cnpj text NOT NULL,
+		    contribuinte contribuinte_icms DEFAULT '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS',
+		    inscricao_estadual text,
+		    cep text,
+		    cidade text,
+		    uf text,
+		    logradouro text,
+		    bairro text,
+		    numero text,
+		    complemento text,
+		    telefone text,
+		    celular text,
+		    email text NOT NULL,
+		    situacao situacao_vendedor DEFAULT 'Ativo com acesso ao sistema',
+		    deposito text,
+		    email_comunicacoes text,
+		    regra_liberacao_comissao regra_comissao DEFAULT 'Liberação parcial (pelo pagamento)',
+		    tipo_comissao tipo_comissao_vendedor DEFAULT 'Comissão com alíquota fixa',
+		    aliquota_comissao numeric,
+		    desconsiderar_comissao_linha_produto boolean DEFAULT false,
+		    observacoes text,
+		    ativo boolean DEFAULT true,
+		    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+		    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+		);
 
-ALTER TABLE public.vendedores
-  ALTER COLUMN contribuinte TYPE public.contribuinte_icms
-  USING contribuinte::text::contribuinte_icms,
-  ALTER COLUMN contribuinte SET DEFAULT '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS';
+		-- Adiciona a coluna vendedor_id na tabela clientes se ela não existir
+		DO $$
+		BEGIN
+		    IF NOT EXISTS (
+		        SELECT FROM pg_attribute
+		        WHERE  attrelid = 'public.clientes'::regclass
+		        AND    attname = 'vendedor_id'
+		    ) THEN
+		        ALTER TABLE public.clientes ADD COLUMN vendedor_id uuid REFERENCES public.vendedores(id) ON DELETE SET NULL;
+		    END IF;
+		END
+		$$;
+
+		-- Habilita RLS para vendedores
+		ALTER TABLE public.vendedores ENABLE ROW LEVEL SECURITY;
+
+		-- Policies para vendedores
+		DROP POLICY IF EXISTS "Permite acesso total para usuários autenticados" ON public.vendedores;
+		CREATE POLICY "Permite acesso total para usuários autenticados"
+		ON public.vendedores
+		FOR ALL
+		TO authenticated
+		USING (true)
+		WITH CHECK (true);

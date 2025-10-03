@@ -1,8 +1,8 @@
-import { PedidoVendaRepository } from '../../repositories/PedidoVendaRepository';
-import { PedidoVendaService } from '../PedidoVendaService';
-import { IPedidoVendaService } from '../interfaces';
+import { ProdutoRepository } from '../../repositories/ProdutoRepository';
+import { ProdutoService } from '../ProdutoService';
+import { IProdutoService } from '../interfaces';
 
-export const createPedidoVendaService = (): IPedidoVendaService => {
-  const repository = new PedidoVendaRepository();
-  return new PedidoVendaService(repository);
+export const createProdutoService = (): IProdutoService => {
+  const repository = new ProdutoRepository();
+  return new ProdutoService(repository);
 };

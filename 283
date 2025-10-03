@@ -1,50 +1,49 @@
 import { z } from 'zod';
+import { TipoPessoaVendedor, ContribuinteICMS, SituacaoVendedor, RegraComissao, TipoComissaoVendedor } from '../types';
 
-export const TipoEnvioEnum = z.enum(['smtp', 'mail']);
-export type TipoEnvio = z.infer<typeof TipoEnvioEnum>;
+const requiredString = (field: string) => z.string({ required_error: `${field} é obrigatório.` }).min(1, `${field} é obrigatório.`);
 
-const baseSchema = z.object({
-  tipoEnvio: TipoEnvioEnum.default('smtp'),
-  remetenteNome: z.string().optional(),
-  remetenteEmail: z.string().email({ message: "E-mail do remetente inválido." }).optional().or(z.literal("")),
-  replyTo: z.string().email({ message: "E-mail de resposta inválido." }).optional().or(z.literal("")),
+export const vendedorSchema = z.object({
+  id: z.string().optional().nullable(),
+  nome: requiredString('Nome'),
+  fantasia: z.string().optional().nullable(),
+  codigo: z.string().optional().nullable(),
+  tipoPessoa: z.nativeEnum(TipoPessoaVendedor),
+  cpfCnpj: requiredString('CPF/CNPJ'),
+  contribuinte: z.nativeEnum(ContribuinteICMS),
+  inscricaoEstadual: z.string().optional().nullable(),
+  
+  // Endereço
+  cep: z.string().optional().nullable(),
+  cidade: z.string().optional().nullable(),
+  uf: z.string().optional().nullable(),
+  logradouro: z.string().optional().nullable(),
+  bairro: z.string().optional().nullable(),
+  numero: z.string().optional().nullable(),
+  complemento: z.string().optional().nullable(),
+
+  // Contato
+  telefone: z.string().optional().nullable(),
+  celular: z.string().optional().nullable(),
+  email: requiredString('E-mail').email('E-mail inválido.'),
+
+  // Situação
+  situacao: z.nativeEnum(SituacaoVendedor),
+  deposito: z.string().optional().nullable(),
+  emailComunicacoes: z.string().email('E-mail inválido.').or(z.literal('')).optional().nullable(),
+
+  // Acesso
+  usuarioSistema: z.string().optional().nullable(),
+
+  // Comissionamento
+  regraLiberacaoComissao: z.nativeEnum(RegraComissao),
+  tipoComissao: z.nativeEnum(TipoComissaoVendedor),
+  aliquotaComissao: z.coerce.number().optional().nullable(),
+  desconsiderarComissaoLinhaProduto: z.boolean().default(false),
+
+  // Observações
+  observacoes: z.string().optional().nullable(),
+  ativo: z.boolean().default(true),
 });
 
-const smtpFields = z.object({
-  host: z.string().optional(),
-  porta: z.coerce.number().optional(),
-  seguranca: z.enum(['none', 'starttls', 'ssl_tls']).optional(),
-  autenticacao: z.boolean().optional(),
-  usuario: z.string().optional(),
-  senha: z.string().optional(),
-});
-
-export const servidorEmailSchema = baseSchema.merge(smtpFields).superRefine((data, ctx) => {
-  if (data.tipoEnvio === 'smtp') {
-    if (!data.remetenteNome) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nome do remetente é obrigatório.", path: ["remetenteNome"] });
-    }
-    if (!data.remetenteEmail) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "E-mail do remetente é obrigatório.", path: ["remetenteEmail"] });
-    }
-    if (!data.host) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Servidor SMTP é obrigatório.", path: ["host"] });
-    }
-    if (!data.porta) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Porta SMTP é obrigatória.", path: ["porta"] });
-    }
-    if (data.autenticacao && !data.usuario) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Usuário é obrigatório para autenticação.", path: ["usuario"] });
-    }
-  }
-});
-
-export type ServidorEmailFormData = z.infer<typeof servidorEmailSchema>;
-
-export const testEmailSchema = z.object({
-  para: z.string().email("E-mail do destinatário inválido."),
-  assunto: z.string().optional(),
-  mensagem: z.string().optional(),
-});
-
-export type TestEmailFormData = z.infer<typeof testEmailSchema>;
+export type VendedorFormData = z.infer<typeof vendedorSchema>;

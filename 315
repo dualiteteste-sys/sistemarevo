@@ -1,8 +1,8 @@
-import { ComissoesRepository } from '../../repositories/ComissoesRepository';
-import { ComissoesService } from '../ComissoesService';
-import { IComissoesService } from '../interfaces';
+import { ConfiguracoesRepository } from '../../repositories/ConfiguracoesRepository';
+		import { ConfiguracoesService } from '../ConfiguracoesService';
+		import { IConfiguracoesService } from '../interfaces';
 
-export const createComissoesService = (): IComissoesService => {
-  const repository = new ComissoesRepository();
-  return new ComissoesService(repository);
-};
+		export const createConfiguracoesService = (): IConfiguracoesService => {
+		  const repository = new ConfiguracoesRepository();
+		  return new ConfiguracoesService(repository);
+		};

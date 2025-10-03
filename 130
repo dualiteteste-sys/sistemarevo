@@ -1,82 +1,105 @@
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Vendedor, ContribuinteICMS } from '../../types';
-import { VendedorFormData, vendedorSchema } from '../../schemas/vendedorSchema';
-import { GenericForm } from '../ui/GenericForm';
-import { IdentificacaoSection } from './form/IdentificacaoSection';
-import { EnderecoSection } from './form/EnderecoSection';
-import { ContatoSection } from './form/ContatoSection';
-import { SituacaoSection } from './form/SituacaoSection';
-import { ComissionamentoSection } from './form/ComissionamentoSection';
-import { ObservacoesSection } from './form/ObservacoesSection';
+import React from 'react';
+import { Control, Controller, UseFormWatch } from 'react-hook-form';
+import { VendedorFormData } from '../../../schemas/vendedorSchema';
+import { GlassInput } from '../../ui/GlassInput';
+import { InputWrapper } from '../../ui/InputWrapper';
 
-interface VendedorFormProps {
-  vendedor?: Partial<Vendedor>;
-  onSave: (vendedor: VendedorFormData) => void;
-  onCancel: () => void;
-  loading?: boolean;
+const CheckboxWrapper: React.FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void; helpText?: string; }> = ({ label, checked, onChange, helpText }) => (
+  <div className="flex flex-col">
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="form-checkbox" />
+      <span className="text-sm text-gray-700">{label}</span>
+    </label>
+    {helpText && <p className="text-xs text-gray-500 mt-1 ml-6">{helpText}</p>}
+  </div>
+);
+
+const modulosDisponiveis = [
+  'Clientes', 'Comissões', 'CRM', 'Pedidos de Venda', 'PDV', 'Propostas comerciais',
+  'Relatório de Preços de Produtos', 'Cotação de fretes'
+];
+const perfisContatoDisponiveis = ['Cliente', 'Fornecedor', 'Vendedor', 'Transportador', 'Funcionário', 'Outro'];
+
+interface AcessoPermissoesSectionProps {
+  control: Control<VendedorFormData>;
+  watch: UseFormWatch<VendedorFormData>;
 }
 
-const getInitialData = (v?: Partial<Vendedor>): VendedorFormData => ({
-  id: v?.id,
-  nome: v?.nome || '',
-  fantasia: v?.fantasia || '',
-  codigo: v?.codigo || '',
-  tipoPessoa: v?.tipoPessoa || 'Física',
-  cpfCnpj: v?.cpfCnpj || '',
-  contribuinte: v?.contribuinte || ContribuinteICMS.NAO_CONTRIBUINTE,
-  inscricaoEstadual: v?.inscricaoEstadual || '',
-  cep: v?.cep || '',
-  cidade: v?.cidade || '',
-  uf: v?.uf || '',
-  logradouro: v?.logradouro || '',
-  bairro: v?.bairro || '',
-  numero: v?.numero || '',
-  complemento: v?.complemento || '',
-  telefone: v?.telefone || '',
-  celular: v?.celular || '',
-  email: v?.email || '',
-  situacao: v?.situacao || 'Ativo com acesso ao sistema',
-  deposito: v?.deposito || 'Padrão',
-  emailComunicacoes: v?.emailComunicacoes || '',
-  usuarioSistema: v?.usuarioSistema || (v?.email ? v.email.split('@')[0] : ''),
-  regraLiberacaoComissao: v?.regraLiberacaoComissao || 'Liberação parcial (pelo pagamento)',
-  tipoComissao: v?.tipoComissao || 'Comissão com alíquota fixa',
-  aliquotaComissao: v?.aliquotaComissao,
-  desconsiderarComissaoLinhaProduto: v?.desconsiderarComissaoLinhaProduto || false,
-  observacoes: v?.observacoes || '',
-  ativo: v?.ativo ?? true,
-});
+export const AcessoPermissoesSection: React.FC<AcessoPermissoesSectionProps> = ({ control, watch }) => {
+  const acessoRestritoIp = watch('acessoRestritoIp');
+  const modulosAcessiveis = watch('modulosAcessiveis') || [];
 
-export const VendedorForm: React.FC<VendedorFormProps> = ({ vendedor, onSave, onCancel, loading }) => {
-  const form = useForm<VendedorFormData>({
-    resolver: zodResolver(vendedorSchema),
-    defaultValues: getInitialData(vendedor),
-  });
-
-  const { control, handleSubmit, watch, setValue, reset } = form;
-
-  useEffect(() => {
-    reset(getInitialData(vendedor));
-  }, [vendedor, reset]);
-  
   return (
-    <GenericForm
-      title={vendedor?.id ? 'Editar Vendedor' : 'Novo Vendedor'}
-      onSave={handleSubmit(onSave)}
-      onCancel={onCancel}
-      loading={loading}
-      size="max-w-6xl"
-    >
-      <div className="space-y-8">
-        <IdentificacaoSection control={control} watch={watch} />
-        <EnderecoSection control={control} setValue={setValue} />
-        <ContatoSection control={control} />
-        <SituacaoSection control={control} />
-        <ComissionamentoSection control={control} />
-        <ObservacoesSection control={control} />
+    <section>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Acesso e Permissões</h3>
+      <Controller
+        name="usuarioSistema"
+        control={control}
+        render={({ field }) => (
+          <InputWrapper label="Usuário do Sistema" helpText="A senha de acesso será configurada em um segundo passo, realizado após ser salvo o vendedor.">
+            <GlassInput {...field} value={field.value || ''} disabled />
+          </InputWrapper>
+        )}
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="space-y-4">
+          <Controller name="acessoRestritoHorario" control={control} render={({ field }) => (
+            <CheckboxWrapper label="Acesso restrito por horário" checked={field.value} onChange={field.onChange} />
+          )} />
+          <Controller name="acessoRestritoIp" control={control} render={({ field }) => (
+            <CheckboxWrapper label="Acesso restrito por IP" checked={field.value} onChange={field.onChange} helpText="Utilize esta opção apenas caso tenha IP fixo" />
+          )} />
+          {acessoRestritoIp && (
+            <Controller name="ipsPermitidos" control={control} render={({ field }) => (
+              <InputWrapper label="IPs Permitidos">
+                <GlassInput {...field} value={field.value || ''} />
+              </InputWrapper>
+            )} />
+          )}
+        </div>
+        <Controller
+          name="perfilAcessoContatos"
+          control={control}
+          render={({ field }) => (
+            <InputWrapper label="Pode acessar contatos com o perfil">
+              <select className="glass-input" {...field} value={field.value || ''}>
+                <option value="">Selecione...</option>
+                {perfisContatoDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </InputWrapper>
+          )}
+        />
       </div>
-    </GenericForm>
+      <h4 className="font-semibold text-gray-700 mt-6 mb-2">Módulos que podem ser acessados</h4>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {modulosDisponiveis.map(modulo => (
+          <Controller
+            key={modulo}
+            name="modulosAcessiveis"
+            control={control}
+            render={({ field }) => (
+              <CheckboxWrapper
+                label={modulo}
+                checked={field.value.includes(modulo)}
+                onChange={(checked) => {
+                  const newValue = checked
+                    ? [...field.value, modulo]
+                    : field.value.filter(m => m !== modulo);
+                  field.onChange(newValue);
+                }}
+              />
+            )}
+          />
+        ))}
+      </div>
+      <div className="mt-4 space-y-2">
+        <Controller name="podeIncluirProdutosNaoCadastrados" control={control} render={({ field }) => (
+          <CheckboxWrapper label="Tem permissão para incluir produtos não cadastrados em pedidos de venda e propostas comerciais" checked={field.value} onChange={field.onChange} />
+        )} />
+        <Controller name="podeEmitirCobrancas" control={control} render={({ field }) => (
+          <CheckboxWrapper label="Pode emitir cobranças" checked={field.value} onChange={field.onChange} />
+        )} />
+      </div>
+    </section>
   );
 };

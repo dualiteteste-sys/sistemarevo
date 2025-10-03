@@ -1,79 +1,53 @@
-import { useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { PedidoVenda, PedidoVendaItem } from '../types';
+import { useService } from './useService';
 
-interface ShortcutActions {
-  onAbrirCaixa: () => void;
-  onCancelarModal: () => void;
-  onContinuar: () => void;
-  onSalvarParaDepois: () => void;
-  onCancelarVenda: () => void;
-  onFocusBuscaProduto: () => void;
-  onFocusCliente: () => void;
-  onFocusVendedor: () => void;
-  onMostrarAtalhos: () => void;
-}
+export const usePedidoVendaService = () => {
+  const [pedidosVenda, setPedidosVenda] = useState<PedidoVenda[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const service = useService('pedidoVenda');
 
-export const usePdvShortcuts = (actions: ShortcutActions, dependencies: any[]) => {
+  const loadPedidosVenda = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await service.getAllPedidosVenda();
+      setPedidosVenda(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar pedidos de venda';
+      setError(errorMessage);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [service]);
+
+  const createPedidoVenda = async (
+    pedidoData: Omit<PedidoVenda, 'id' | 'createdAt' | 'updatedAt' | 'itens'>,
+    itensData: Omit<PedidoVendaItem, 'id' | 'createdAt' | 'updatedAt' | 'pedidoId'>[]
+  ) => {
+    try {
+      setError(null);
+      const novoPedido = await service.createPedidoVenda(pedidoData, itensData);
+      setPedidosVenda(prev => [novoPedido, ...prev]);
+      return novoPedido;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar pedido de venda';
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const { ctrlKey, key } = e;
+    loadPedidosVenda();
+  }, [loadPedidosVenda]);
 
-      if (ctrlKey) {
-        switch (key.toLowerCase()) {
-          case 'enter':
-            e.preventDefault();
-            actions.onAbrirCaixa();
-            actions.onContinuar();
-            break;
-          case 'delete':
-            e.preventDefault();
-            actions.onCancelarVenda();
-            break;
-          case 'b':
-            e.preventDefault();
-            console.log('Busca avançada...');
-            break;
-          case 'k':
-            e.preventDefault();
-            console.log('Usar item não cadastrado...');
-            break;
-          case 'q':
-            e.preventDefault();
-            actions.onFocusCliente();
-            break;
-          case '?':
-            e.preventDefault();
-            actions.onMostrarAtalhos();
-            break;
-          case 'y':
-            e.preventDefault();
-            console.log('Detalhes do caixa...');
-            break;
-        }
-      } else {
-        switch (key) {
-          case 'Escape':
-            actions.onCancelarModal();
-            actions.onCancelarVenda();
-            break;
-          case 'F8':
-            e.preventDefault();
-            actions.onFocusCliente();
-            break;
-          case 'F9':
-            e.preventDefault();
-            actions.onFocusVendedor();
-            break;
-          case 'F10':
-            e.preventDefault();
-            actions.onSalvarParaDepois();
-            break;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, dependencies);
+  return {
+    pedidosVenda,
+    loading,
+    error,
+    createPedidoVenda,
+    loadPedidosVenda,
+  };
 };

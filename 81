@@ -1,54 +1,83 @@
-import React, { useState } from 'react';
-import { MoreVertical, Info, Search, X, Key, Power, Printer, FileText } from 'lucide-react';
-import { GlassButton } from '../ui/GlassButton';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useMemo, useCallback } from 'react';
+import { usePdv } from '../../contexts/PdvContext';
+import { GlassCard } from '../ui/GlassCard';
+import { AutocompleteInput } from '../ui/AutocompleteInput';
+import { ClienteService } from '../../services/ClienteService';
+import { VendedorService } from '../../services/VendedorService';
+import { Cliente, Vendedor } from '../../types';
 
-export const PdvHeader: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface PdvSidePanelProps {
+  clienteInputRef: React.RefObject<HTMLDivElement>;
+  vendedorInputRef: React.RefObject<HTMLDivElement>;
+}
 
-  const menuItems = [
-    { label: 'Busca avançada (Ctrl+B)', icon: Search },
-    { label: 'Usar item não cadastrado (Ctrl+K)', icon: Key },
-    { label: 'Cancelar venda (Ctrl+DEL)', icon: X },
-    { label: 'Informar cliente (Ctrl+Q ou F8)', icon: FileText },
-    { label: 'Faturar pré-venda', icon: Printer },
-    { label: 'Mostrar atalhos (Ctrl+?)', icon: Info },
-    { label: 'Detalhes do caixa (Ctrl+Y)', icon: Info },
-    { label: 'Lançar sangria de caixa', icon: Info },
-    { label: 'Lançar reforço de caixa', icon: Info },
-    { label: 'Fechar caixa', icon: Power },
-  ];
+export const PdvSidePanel: React.FC<PdvSidePanelProps> = ({ clienteInputRef, vendedorInputRef }) => {
+  const { selectedCliente, setSelectedCliente, selectedVendedor, setSelectedVendedor, observacao, setObservacao } = usePdv();
+  
+  const clienteService = useMemo(() => new ClienteService(), []);
+  const vendedorService = useMemo(() => new VendedorService(), []);
+
+  const fetchClientes = useCallback(async (query: string) => {
+    const results = await clienteService.search(query, 'cliente');
+    return results.map(c => ({ value: c.id, label: c.nome, cliente: c }));
+  }, [clienteService]);
+
+  const fetchVendedores = useCallback(async (query: string) => {
+    const results = await vendedorService.search(query);
+    return results.map(v => ({ value: v.id, label: v.nome, vendedor: v }));
+  }, [vendedorService]);
+
+  const handleClienteSelect = (clienteId: string | null, suggestions: any[]) => {
+    if (clienteId) {
+      const selected = suggestions.find(s => s.value === clienteId);
+      setSelectedCliente(selected?.cliente as Cliente || null);
+    } else {
+      setSelectedCliente(null);
+    }
+  };
+
+  const handleVendedorSelect = (vendedorId: string | null, suggestions: any[]) => {
+    if (vendedorId) {
+      const selected = suggestions.find(s => s.value === vendedorId);
+      setSelectedVendedor(selected?.vendedor as Vendedor || null);
+    } else {
+      setSelectedVendedor(null);
+    }
+  };
 
   return (
-    <header className="mb-4">
-      <div className="flex justify-end items-center gap-2">
-        <GlassButton variant="secondary" size="sm">Detalhes do caixa (Ctrl+Y)</GlassButton>
-        <GlassButton variant="secondary" size="sm">Busca avançada (Ctrl+B)</GlassButton>
-        <div className="relative">
-          <GlassButton icon={MoreVertical} variant="secondary" size="sm" onClick={() => setIsMenuOpen(prev => !prev)} />
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute right-0 mt-2 w-64 bg-glass-100 backdrop-blur-lg border border-white/20 rounded-xl shadow-lg z-20"
-              >
-                <ul className="p-2">
-                  {menuItems.map(item => (
-                    <li key={item.label}>
-                      <a href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/30">
-                        <item.icon size={16} />
-                        {item.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-          </AnimatePresence>
+    <GlassCard className="h-full flex flex-col">
+      <div className="space-y-6">
+        <div ref={clienteInputRef}>
+          <AutocompleteInput
+            label="Cliente (F8)"
+            value={selectedCliente?.id || ''}
+            onValueChange={handleClienteSelect}
+            fetchSuggestions={fetchClientes}
+            initialLabel={selectedCliente?.nome || ''}
+            placeholder="Consumidor Final"
+          />
+        </div>
+        <div ref={vendedorInputRef}>
+          <AutocompleteInput
+            label="Vendedor (F9)"
+            value={selectedVendedor?.id || ''}
+            onValueChange={handleVendedorSelect}
+            fetchSuggestions={fetchVendedores}
+            initialLabel={selectedVendedor?.nome || ''}
+            placeholder="Sem vendedor"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-gray-600 mb-1 block">Observação</label>
+          <textarea
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            className="glass-input h-24 resize-y"
+            placeholder="Adicione uma observação à venda..."
+          />
         </div>
       </div>
-    </header>
+    </GlassCard>
   );
 };

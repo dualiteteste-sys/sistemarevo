@@ -1,51 +1,40 @@
 import React from 'react';
 import { Control, Controller } from 'react-hook-form';
 import { PedidoVendaFormData } from '../../../schemas/pedidoVendaSchema';
+import { GlassInput } from '../../ui/GlassInput';
+import { GlassButton } from '../../ui/GlassButton';
 import { InputWrapper } from '../../ui/InputWrapper';
-import { UploadCloud } from 'lucide-react';
 
-interface ObservacoesSectionProps {
+interface PagamentoSectionProps {
   control: Control<PedidoVendaFormData>;
 }
 
-export const ObservacoesSection: React.FC<ObservacoesSectionProps> = ({ control }) => {
+export const PagamentoSection: React.FC<PagamentoSectionProps> = ({ control }) => {
   return (
     <section>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Dados Adicionais</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Controller name="deposito" control={control} render={({ field }) => (
-          <InputWrapper label="Depósito">
-            <select className="glass-input" {...field} value={field.value || 'Padrão'}>
-              <option>Padrão</option>
-            </select>
-          </InputWrapper>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Pagamento</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Controller name="formaRecebimento" control={control} render={({ field }) => (
+          <InputWrapper label="Forma de recebimento"><GlassInput {...field} value={field.value || ''} /></InputWrapper>
         )} />
-        <Controller name="marcadores" control={control} render={({ field }) => (
-          <InputWrapper label="Marcadores" helpText="Separados por vírgula ou tab">
-            <input className="glass-input" value={field.value?.join(', ') || ''} onChange={e => field.onChange(e.target.value.split(',').map(m => m.trim()))} />
-          </InputWrapper>
+        <Controller name="meioPagamento" control={control} render={({ field }) => (
+          <InputWrapper label="Meio"><GlassInput {...field} value={field.value || ''} /></InputWrapper>
+        )} />
+        <Controller name="contaBancaria" control={control} render={({ field }) => (
+          <InputWrapper label="Conta bancária"><GlassInput {...field} value={field.value || ''} /></InputWrapper>
+        )} />
+        <Controller name="categoriaFinanceira" control={control} render={({ field }) => (
+          <InputWrapper label="Categoria"><GlassInput placeholder="Selecione" {...field} value={field.value || ''} /></InputWrapper>
         )} />
         <div className="md:col-span-2">
-          <Controller name="observacoes" control={control} render={({ field }) => (
-            <InputWrapper label="Observações" helpText="Esta informação será impressa na venda e transferida para as observações da nota.">
-              <textarea className="glass-input h-24 resize-y" {...field} value={field.value || ''} />
+          <Controller name="condicaoPagamento" control={control} render={({ field }) => (
+            <InputWrapper label="Condição de pagamento" helpText="Exemplos: 30 60, 3x ou 15 +2x">
+              <div className="flex gap-2">
+                <GlassInput {...field} value={field.value || ''} />
+                <GlassButton type="button">Gerar Parcelas</GlassButton>
+              </div>
             </InputWrapper>
           )} />
-        </div>
-        <div className="md:col-span-2">
-          <Controller name="observacoesInternas" control={control} render={({ field }) => (
-            <InputWrapper label="Observações Internas" helpText="Esta informação é de uso interno.">
-              <textarea className="glass-input h-24 resize-y" {...field} value={field.value || ''} />
-            </InputWrapper>
-          )} />
-        </div>
-        <div className="md:col-span-2">
-          <InputWrapper label="Anexos" helpText="O tamanho do arquivo não deve ultrapassar 2 MB">
-            <div className="p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-colors border-gray-300 hover:border-blue-400">
-              <UploadCloud size={32} className="mx-auto text-gray-400" />
-              <p className="mt-2 text-sm text-gray-600">Procurar arquivo</p>
-            </div>
-          </InputWrapper>
         </div>
       </div>
     </section>

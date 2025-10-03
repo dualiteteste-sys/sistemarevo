@@ -1,39 +1,29 @@
-import React, { forwardRef } from 'react';
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
+import { useSidebar } from '../../contexts/SidebarContext';
 
-interface GlassInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  icon?: React.ReactNode;
-}
+export const HamburgerButton: React.FC = () => {
+  const { isMobileMenuOpen, toggleMobileMenu } = useSidebar();
 
-export const GlassInput = forwardRef<HTMLInputElement, GlassInputProps>(({
-  type = 'text',
-  placeholder,
-  label,
-  className = '',
-  icon,
-  ...props
-}, ref) => {
   return (
-    <div className={`relative w-full ${className}`}>
-      {label && (
-         <label className="text-sm text-gray-600 mb-1 block">{label}</label>
-      )}
-      <div className="relative">
-        {icon && (
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-            {icon}
-          </div>
-        )}
-        <input
-          ref={ref}
-          type={type}
-          placeholder={placeholder}
-          className={`glass-input ${icon ? 'pl-10' : ''}`}
-          {...props}
-        />
-      </div>
-    </div>
+    <button
+      onClick={toggleMobileMenu}
+      className="relative w-10 h-10 flex items-center justify-center rounded-full bg-glass-200 backdrop-blur-sm border border-white/30 text-gray-700"
+      aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+    >
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={isMobileMenuOpen ? 'x' : 'menu'}
+          initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+          animate={{ rotate: 0, opacity: 1, scale: 1 }}
+          exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+          transition={{ duration: 0.2 }}
+          className="absolute"
+        >
+          {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </motion.div>
+      </AnimatePresence>
+    </button>
   );
-});
-
-GlassInput.displayName = 'GlassInput';
+};

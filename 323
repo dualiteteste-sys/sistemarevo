@@ -1,8 +1,8 @@
-import { EmbalagemRepository } from '../../repositories/EmbalagemRepository';
-import { EmbalagemService } from '../EmbalagemService';
-import { IEmbalagemService } from '../interfaces';
+import { EstoqueRepository } from '../../repositories/EstoqueRepository';
+import { EstoqueService } from '../EstoqueService';
+import { IEstoqueService } from '../interfaces';
 
-export const createEmbalagemService = (): IEmbalagemService => {
-  const repository = new EmbalagemRepository();
-  return new EmbalagemService(repository);
+export const createEstoqueService = (): IEstoqueService => {
+  const repository = new EstoqueRepository();
+  return new EstoqueService(repository);
 };

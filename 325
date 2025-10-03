@@ -1,8 +1,12 @@
-import { ExpedicaoRepository } from '../../repositories/ExpedicaoRepository';
-import { ExpedicaoService } from '../ExpedicaoService';
-import { IExpedicaoService } from '../interfaces';
+import { FaturaVendaRepository } from '../../repositories/FaturaVendaRepository';
+import { PedidoVendaRepository } from '../../repositories/PedidoVendaRepository';
+import { ContasReceberRepository } from '../../repositories/ContasReceberRepository';
+import { FaturaVendaService } from '../FaturaVendaService';
+import { IFaturaVendaService } from '../interfaces';
 
-export const createExpedicaoService = (): IExpedicaoService => {
-  const repository = new ExpedicaoRepository();
-  return new ExpedicaoService(repository);
+export const createFaturaVendaService = (): IFaturaVendaService => {
+  const faturaRepository = new FaturaVendaRepository();
+  const pedidoRepository = new PedidoVendaRepository();
+  const contasReceberRepository = new ContasReceberRepository();
+  return new FaturaVendaService(faturaRepository, pedidoRepository, contasReceberRepository);
 };

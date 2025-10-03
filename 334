@@ -1,8 +1,8 @@
-import { ProdutoRepository } from '../../repositories/ProdutoRepository';
-import { ProdutoService } from '../ProdutoService';
-import { IProdutoService } from '../interfaces';
+import { RelatorioRepository } from '../../repositories/RelatorioRepository';
+import { RelatorioService } from '../RelatorioService';
+import { IRelatorioService } from '../interfaces';
 
-export const createProdutoService = (): IProdutoService => {
-  const repository = new ProdutoRepository();
-  return new ProdutoService(repository);
+export const createRelatorioService = (): IRelatorioService => {
+  const repository = new RelatorioRepository();
+  return new RelatorioService(repository);
 };

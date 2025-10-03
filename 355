@@ -1,73 +1,78 @@
 import { IEntity } from './base';
 import { Cliente } from './cliente';
-import { Servico } from './servico';
 import { Vendedor } from './vendedor';
 
-export enum StatusOS {
-  ABERTA = 'ABERTA',
-  EM_ANDAMENTO = 'EM_ANDAMENTO',
-  FINALIZADA = 'FINALIZADA',
-  CANCELADA = 'CANCELADA',
-  ORCAMENTO = 'ORCAMENTO',
+export enum StatusPedidoVenda {
+  ABERTO = 'ABERTO',
+  FATURADO = 'FATURADO',
+  CANCELADO = 'CANCELADO'
 }
 
-export enum PrioridadeOS {
-  BAIXA = 'BAIXA',
-  MEDIA = 'MEDIA',
-  ALTA = 'ALTA',
-  URGENTE = 'URGENTE'
-}
-
-export interface OrdemServicoItem extends IEntity {
-  ordemServicoId: string;
+export interface PedidoVendaItem extends IEntity {
+  pedidoId: string;
+  produtoId?: string;
   servicoId?: string;
-  servico?: Servico;
   descricao: string;
   codigo?: string;
+  unidade?: string;
   quantidade: number;
-  preco: number;
-  desconto: number;
+  valorUnitario: number;
+  descontoPercentual?: number;
   valorTotal: number;
-  orcar: boolean;
 }
 
-export interface OrdemServicoAnexo extends IEntity {
-  ordemServicoId: string;
-  nomeArquivo: string;
-  path: string;
-  tamanho: number;
-  tipo: string;
+export interface PedidoVendaAnexo extends IEntity {
+    pedidoId: string;
+    nomeArquivo: string;
+    path: string;
+    tamanho: number;
+    tipo: string;
 }
 
-export interface OrdemServico extends IEntity {
+export interface PedidoVenda extends IEntity {
   numero: string;
+  naturezaOperacao: string;
   clienteId: string;
   cliente?: Cliente;
-  descricaoServico?: string;
-  consideracoesFinais?: string;
-  itens: OrdemServicoItem[];
-  dataInicio: Date;
-  dataPrevisao?: Date;
-  hora?: string;
-  dataConclusao?: Date;
-  totalServicos: number;
-  desconto?: string; // Pode ser '10%' ou '100.00'
-  observacoesServico?: string;
-  observacoesInternas?: string;
   vendedorId?: string;
   vendedor?: Vendedor;
-  comissaoPercentual?: number;
-  valorComissao?: number;
-  tecnicoId?: string;
-  tecnico?: Vendedor;
-  orcar: boolean;
+  enderecoEntregaDiferente: boolean;
+  itens: PedidoVendaItem[];
+  // Totais
+  totalProdutos: number;
+  valorIpi?: number;
+  valorIcmsSt?: number;
+  desconto?: string; // '10%' ou '100.00'
+  freteCliente?: number;
+  freteEmpresa?: number;
+  despesas?: number;
+  valorTotal: number;
+  // Detalhes da Venda
+  dataVenda: Date;
+  dataPrevistaEntrega?: Date;
+  dataEnvio?: Date;
+  dataMaximaDespacho?: Date;
+  numeroPedidoEcommerce?: string;
+  identificadorPedidoEcommerce?: string;
+  numeroPedidoCanalVenda?: string;
+  intermediador?: string;
+  // Pagamento
   formaRecebimento?: string;
   meioPagamento?: string;
   contaBancaria?: string;
   categoriaFinanceira?: string;
   condicaoPagamento?: string;
-  anexos: OrdemServicoAnexo[];
+  // Transporte
+  formaEnvio?: string;
+  enviarParaExpedicao: boolean;
+  // Dados Adicionais
+  deposito?: string;
+  observacoes?: string;
+  observacoesInternas?: string;
   marcadores?: string[];
-  status: StatusOS;
-  prioridade: PrioridadeOS;
+  anexos?: PedidoVendaAnexo[];
+  status: StatusPedidoVenda;
+  pesoBruto?: number;
+  pesoLiquido?: number;
+  expedido: boolean;
 }

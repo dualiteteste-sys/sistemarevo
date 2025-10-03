@@ -1,80 +1,99 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import React, { useMemo } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Header } from '../components/layout/Header';
+import { GlassCard } from '../components/ui/GlassCard';
+import { settingsMenuItems } from '../config/settingsMenuConfig';
 
-@layer base {
-  * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-  }
+const SettingsLayout: React.FC = () => {
+  const location = useLocation();
 
-  /* Scrollbar customizada */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  const { activeGroup, pageTitle } = useMemo(() => {
+    const pathParts = location.pathname.split('/');
+    const groupSlug = pathParts[2];
+    const pageSlug = pathParts[3];
+    
+    const group = settingsMenuItems.find(g => g.id === groupSlug);
+    let title = 'Configurações';
+    if (group) {
+        const child = group.children.find(c => c.path.split('/')[3] === pageSlug);
+        if (child) {
+            title = child.label;
+        } else {
+            // Check nested children
+            for (const sub of group.children) {
+                const nestedChild = sub.children?.find(nc => nc.path.split('/')[3] === pageSlug);
+                if (nestedChild) {
+                    title = nestedChild.label;
+                    break;
+                }
+            }
+        }
+    }
 
-  .form-input, .form-select, .form-textarea {
-    @apply block w-full bg-gray-50/80 border border-gray-300/80 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 transition-colors duration-200;
-  }
+    return { activeGroup: group, pageTitle: title };
+  }, [location.pathname]);
 
-  .form-checkbox {
-    @apply rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50;
-  }
-  
-  .form-radio {
-      @apply text-blue-600 border-gray-300 focus:ring-blue-500;
-  }
-}
+  return (
+    <div>
+      <Header title="Configurações" subtitle={pageTitle} />
+      
+      <div className="flex overflow-x-auto -mx-8 px-8 pb-4 mb-6">
+        <div className="flex items-center gap-2 border-b-2 border-transparent">
+          {settingsMenuItems.map(group => (
+            <NavLink
+              key={group.id}
+              to={group.children[0].children ? group.children[0].children[0].path : group.children[0].path}
+              className={({ isActive }) => 
+                `flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors duration-200 border-b-2
+                ${activeGroup?.id === group.id ? 'border-blue-600 text-blue-700 font-medium' : 'border-transparent text-gray-600 hover:text-blue-600'}`
+              }
+            >
+              <group.icon size={18} />
+              <span>{group.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-12 gap-8">
+        <aside className="col-span-3">
+          <GlassCard className="p-4 space-y-1 sticky top-24">
+            {activeGroup?.children.map(child => {
+              if (child.children) {
+                return (
+                  <div key={child.id}>
+                    <h4 className="px-3 pt-3 pb-1 text-xs font-bold uppercase text-gray-400">{child.label}</h4>
+                    {child.children.map(subChild => (
+                      <NavLink
+                        key={subChild.id}
+                        to={subChild.path}
+                        className={({ isActive }) => `block px-3 py-2 text-sm rounded-lg ${isActive ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-white/50 text-gray-700'}`}
+                      >
+                        {subChild.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <NavLink
+                  key={child.id}
+                  to={child.path}
+                  className={({ isActive }) => `block px-3 py-2 text-sm rounded-lg ${isActive ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-white/50 text-gray-700'}`}
+                >
+                  {child.label}
+                </NavLink>
+              );
+            })}
+          </GlassCard>
+        </aside>
+        
+        <main className="col-span-9">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
 
-@layer components {
-  .glass-card {
-    @apply bg-glass-100 backdrop-blur-md border border-white/20 rounded-2xl shadow-glass;
-  }
-  
-  .glass-button {
-    @apply bg-glass-200 backdrop-blur-sm border border-white/30 rounded-xl 
-           hover:bg-glass-100 hover:shadow-glass-sm transition-all duration-200 
-           active:scale-95;
-  }
-  
-  .glass-input {
-    @apply w-full px-4 py-3 bg-glass-200 backdrop-blur-sm border border-white/20 
-           rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 
-           focus:border-white/40 transition-all duration-200;
-  }
-  
-  .glass-badge {
-    @apply px-3 py-1 text-xs font-medium rounded-full border border-white/30;
-  }
-
-  /* Custom Switch */
-  .form-switch {
-    @apply relative inline-flex items-center h-6 rounded-full w-11 cursor-pointer transition-colors;
-  }
-  .form-switch-checkbox {
-    @apply w-0 h-0 opacity-0;
-  }
-  .form-switch-label {
-    @apply absolute top-0 left-0 w-full h-full bg-gray-300/70 rounded-full transition-colors;
-  }
-  .form-switch-knob {
-    @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ease-in-out;
-  }
-  .form-switch-checkbox:checked + .form-switch-label {
-    @apply bg-blue-600;
-  }
-  .form-switch-checkbox:checked ~ .form-switch-knob {
-    transform: translateX(20px);
-  }
-}
+export default SettingsLayout;

@@ -1,19 +1,43 @@
 import { BaseRepository } from './BaseRepository';
-		import { Configuracao } from '../types';
-		import { IConfiguracoesRepository } from './interfaces';
-		export class ConfiguracoesRepository extends BaseRepository<Configuracao> implements IConfiguracoesRepository {
+		import { ContaPagar, ContaPagarAnexo } from '../types';
+		import { snakeToCamel, camelToSnake } from '../lib/utils';
+
+		export class ContasPagarRepository extends BaseRepository<ContaPagar> {
 		  constructor() {
-		    super('configuracoes');
+		    super('contas_pagar');
 		  }
-		  protected createEntity(data: any): Configuracao {
-		    return data as Configuracao;
+
+		  protected createEntity(data: any): ContaPagar {
+		    return data as ContaPagar;
 		  }
-		  async getAllSettings(): Promise<Configuracao[]> {
-		    console.warn('[Modo de Construção] Chamada para getAllSettings bloqueada. Retornando configurações vazias.');
-		    return Promise.resolve([]);
+
+		  async findAll(): Promise<ContaPagar[]> {
+		    console.warn('[Modo de Construção] Chamada para ContasPagarRepository.findAll bloqueada.');
+		    return [];
 		  }
-		  async saveSettings(settings: { chave: string; valor: any }[]): Promise<void> {
-		    console.warn('[Modo de Construção] Chamada para saveSettings bloqueada.');
-		    return Promise.resolve();
+
+		  async findById(id: string): Promise<ContaPagar | null> {
+		    console.warn('[Modo de Construção] Chamada para ContasPagarRepository.findById bloqueada.');
+		    return null;
+		  }
+
+		  async create(data: Partial<Omit<ContaPagar, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ContaPagar> {
+		    console.warn('[Modo de Construção] Chamada para ContasPagarRepository.create bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+
+		  async update(id: string, updates: Partial<ContaPagar>): Promise<ContaPagar> {
+		    console.warn('[Modo de Construção] Chamada para ContasPagarRepository.update bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+
+		  async uploadAnexo(contaId: string, file: File): Promise<string> {
+		    console.warn('[Modo de Construção] Chamada para ContasPagarRepository.uploadAnexo bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+
+		  async deleteAnexo(anexoId: string, filePath: string): Promise<void> {
+		    console.warn('[Modo de Construção] Chamada para ContasPagarRepository.deleteAnexo bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
 		  }
 		}

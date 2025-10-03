@@ -1,106 +1,119 @@
-import React, { useState, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Filter, Mail, KeyRound } from 'lucide-react';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { GlassButton } from '../../components/ui/GlassButton';
-import { GlassInput } from '../../components/ui/GlassInput';
-import { Pagination } from '../../components/ui/Pagination';
-import { DataTable } from '../../components/ui/DataTable';
-import { useModalForm } from '../../hooks/useModalForm';
-import { Vendedor, SituacaoVendedor } from '../../types';
-import { useVendedores } from '../../hooks/data/useVendedores';
-import { ConvidarUsuarioModal } from '../../components/settings/usuarios/ConvidarUsuarioModal';
-import toast from 'react-hot-toast';
+import React, { lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import SettingsLayout from '../../layouts/SettingsLayout';
+import { RouteErrorBoundary } from '../../components/ui/RouteErrorBoundary';
 
-export const Usuarios: React.FC = () => {
-  const { vendedores, loading, error, currentPage, totalPages, goToPage } = useVendedores();
-  const { isFormOpen, handleOpenCreateForm, handleCloseForm } = useModalForm();
-  const [filtro, setFiltro] = useState('');
-  const navigate = useNavigate();
+const DadosEmpresa = lazy(() => import('./DadosEmpresa'));
+const ServidorEmail = lazy(() => import('./ServidorEmail'));
+const SettingsPlaceholder = lazy(() => import('./SettingsPlaceholder'));
+const CategoriasFinanceiras = lazy(() => import('./CategoriasFinanceiras'));
+const FormasPagamento = lazy(() => import('./FormasPagamento'));
+const Usuarios = lazy(() => import('./Usuarios'));
+const Papeis = lazy(() => import('./Papeis'));
+const UsuarioPermissoes = lazy(() => import('./UsuarioPermissoes'));
 
-  const vendedoresFiltrados = vendedores.filter(vendedor =>
-    vendedor.nome.toLowerCase().includes(filtro.toLowerCase()) ||
-    (vendedor.email && vendedor.email.toLowerCase().includes(filtro.toLowerCase()))
-  );
-
-  const handleInvite = async (email: string) => {
-    toast.promise(
-      new Promise(resolve => setTimeout(resolve, 1500)),
-      {
-        loading: `Enviando convite para ${email}...`,
-        success: `Convite enviado para ${email}! O usuário precisa se cadastrar para ter acesso.`,
-        error: 'Falha ao enviar convite.',
-      }
-    );
-    handleCloseForm();
-  };
-
-  const handleNovoUsuario = () => {
-    navigate('/vendedores');
-  };
-
-  const handleEditPermissions = (vendedorId: string) => {
-    navigate(`/configuracoes/usuarios/${vendedorId}/permissoes`);
-  };
-
-  const getStatusBadge = (status: SituacaoVendedor) => {
-    const colors = {
-      [SituacaoVendedor.ATIVO_COM_ACESSO]: 'bg-green-100 text-green-700 border-green-200',
-      [SituacaoVendedor.ATIVO_SEM_ACESSO]: 'bg-blue-100 text-blue-700 border-blue-200',
-      [SituacaoVendedor.INATIVO]: 'bg-red-100 text-red-700 border-red-200'
-    };
-    return <span className={`glass-badge ${colors[status]}`}>{status}</span>;
-  };
-
-  const columns = useMemo(() => [
-    { header: 'Nome', accessorKey: 'nome', cell: (item: Vendedor) => <p className="font-medium text-gray-800">{item.nome}</p> },
-    { header: 'Email', accessorKey: 'email' },
-    { header: 'Situação', accessorKey: 'situacao', cell: (item: Vendedor) => getStatusBadge(item.situacao), className: 'text-center' },
-  ], []);
-
+const SettingsRoutes: React.FC = () => {
   return (
-    <>
-      <GlassCard className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-[250px]">
-            <GlassInput placeholder="Buscar por nome ou email..." value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full max-w-md" />
-            <GlassButton icon={Filter} variant="secondary">Filtros</GlassButton>
-          </div>
-          <div className="flex items-center gap-2">
-            <GlassButton icon={Mail} onClick={handleOpenCreateForm}>Convidar Usuário</GlassButton>
-            <GlassButton icon={Plus} onClick={handleNovoUsuario}>Novo Usuário</GlassButton>
-          </div>
-        </div>
-      </GlassCard>
+    <Routes>
+      <Route element={<SettingsLayout />} errorElement={<RouteErrorBoundary />}>
+        <Route path="/" element={<Navigate to="geral/alterar-dados-da-empresa" replace />} />
+        
+        {/* Geral */}
+        <Route path="geral/alterar-dados-da-empresa" element={<DadosEmpresa />} />
+        <Route path="geral/usuarios" element={<Usuarios />} />
+        <Route path="geral/papeis-e-permissoes" element={<Papeis />} />
+        <Route path="geral/usuarios/:id/permissoes" element={<UsuarioPermissoes />} />
+        <Route path="geral/servidor-de-email" element={<ServidorEmail />} />
+        <Route path="geral/envio-de-documentos" element={<SettingsPlaceholder title="Configurações do Envio de Documentos" />} />
+        <Route path="geral/etiquetas" element={<SettingsPlaceholder title="Configurações das Etiquetas" />} />
+        <Route path="geral/agenda" element={<SettingsPlaceholder title="Configurações da Agenda" />} />
+        <Route path="geral/cancelamento-da-conta" element={<SettingsPlaceholder title="Solicitar Cancelamento da Conta" />} />
+        <Route path="geral/interface-do-usuario" element={<SettingsPlaceholder title="Interface do Usuário" />} />
+        <Route path="geral/token-api" element={<SettingsPlaceholder title="Token API" />} />
+        <Route path="geral/configuracoes-de-api" element={<SettingsPlaceholder title="Configurações de API" />} />
 
-      <GlassCard>
-        <DataTable
-          data={vendedoresFiltrados}
-          columns={columns}
-          loading={loading && vendedores.length === 0}
-          error={error}
-          entityName="Usuário"
-          actions={(item) => (
-            <div className="flex items-center gap-2">
-              <GlassButton icon={Edit2} variant="secondary" size="sm" onClick={() => navigate(`/vendedores?edit=${item.id}`)} title="Editar Dados do Vendedor" />
-              <GlassButton icon={KeyRound} variant="secondary" size="sm" onClick={() => handleEditPermissions(item.id)} title="Editar Permissões" />
-            </div>
-          )}
-        />
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={goToPage} />
-      </GlassCard>
+        {/* Cadastros */}
+        <Route path="cadastros/clientes" element={<SettingsPlaceholder title="Configurações do Cadastro de Clientes" />} />
+        <Route path="cadastros/produtos" element={<SettingsPlaceholder title="Configurações do Cadastro de Produtos" />} />
+        <Route path="cadastros/variacoes-de-produtos" element={<SettingsPlaceholder title="Configurações de Variações de Produtos" />} />
+        <Route path="cadastros/atributos-de-produtos" element={<SettingsPlaceholder title="Configurações de Atributos de Produtos" />} />
+        <Route path="cadastros/marcas-de-produtos" element={<SettingsPlaceholder title="Configurações de Marcas de Produtos" />} />
+        <Route path="cadastros/tabelas-de-medidas" element={<SettingsPlaceholder title="Tabelas de Medidas" />} />
+        <Route path="cadastros/tags" element={<SettingsPlaceholder title="Configurações das Tags" />} />
+        <Route path="cadastros/tipos-de-contato" element={<SettingsPlaceholder title="Tipos de Contato" />} />
+        <Route path="cadastros/linhas-de-produto" element={<SettingsPlaceholder title="Linhas de Produto" />} />
 
-      <AnimatePresence>
-        {isFormOpen && (
-          <ConvidarUsuarioModal
-            onInvite={handleInvite}
-            onCancel={handleCloseForm}
-          />
-        )}
-      </AnimatePresence>
-    </>
+        {/* Suprimentos */}
+        <Route path="suprimentos/depositos-de-estoque" element={<SettingsPlaceholder title="Depósitos de Estoque" />} />
+        <Route path="suprimentos/estoque" element={<SettingsPlaceholder title="Configurações de Estoque" />} />
+        <Route path="suprimentos/envio-de-documentos" element={<SettingsPlaceholder title="Configurações do Envio de Documentos (Suprimentos)" />} />
+        <Route path="suprimentos/marcadores-oc" element={<SettingsPlaceholder title="Configurações dos Marcadores nas Ordens de Compra" />} />
+        <Route path="suprimentos/ordens-de-compra" element={<SettingsPlaceholder title="Configurações de Ordens de Compra" />} />
+
+        {/* Vendas */}
+        <Route path="vendas/pdv" element={<SettingsPlaceholder title="Configurações do PDV" />} />
+        <Route path="vendas/propostas-comerciais" element={<SettingsPlaceholder title="Configurações das Propostas Comerciais" />} />
+        <Route path="vendas/pedidos-de-venda" element={<SettingsPlaceholder title="Configurações dos Pedidos de Venda" />} />
+        <Route path="vendas/envio-de-documentos" element={<SettingsPlaceholder title="Configurações do Envio de Documentos (Vendas)" />} />
+        <Route path="vendas/marcadores-nas-vendas" element={<SettingsPlaceholder title="Configurações dos Marcadores nas Vendas" />} />
+        <Route path="vendas/marcadores-nas-propostas" element={<SettingsPlaceholder title="Configurações dos Marcadores nas Propostas Comerciais" />} />
+        <Route path="vendas/marcadores-nas-devolucoes" element={<SettingsPlaceholder title="Configurações dos Marcadores nas Devoluções de Vendas" />} />
+        <Route path="vendas/devolucoes-de-vendas" element={<SettingsPlaceholder title="Configurações das Devoluções de Vendas" />} />
+        <Route path="vendas/expedicao/formas-de-envio" element={<SettingsPlaceholder title="Formas de Envio" />} />
+        <Route path="vendas/expedicao/configuracoes" element={<SettingsPlaceholder title="Configurações da Expedição" />} />
+        <Route path="vendas/expedicao/intelipost" element={<SettingsPlaceholder title="Configurações da Intelipost" />} />
+        <Route path="vendas/crm/configuracoes" element={<SettingsPlaceholder title="Configurações do CRM" />} />
+        <Route path="vendas/crm/marcadores" element={<SettingsPlaceholder title="Configurações dos Marcadores no CRM" />} />
+        <Route path="vendas/crm/estagios" element={<SettingsPlaceholder title="Configurações dos Estágios no Funil do CRM" />} />
+
+        {/* Notas Fiscais */}
+        <Route path="notas-fiscais/dados-da-empresa" element={<SettingsPlaceholder title="Dados da Empresa (NF)" />} />
+        <Route path="notas-fiscais/certificado-digital" element={<SettingsPlaceholder title="Configuração do Certificado Digital" />} />
+        <Route path="notas-fiscais/ambiente" element={<SettingsPlaceholder title="Ambiente das Notas Fiscais" />} />
+        <Route path="notas-fiscais/naturezas-entrada" element={<SettingsPlaceholder title="Naturezas de Operação de Entrada" />} />
+        <Route path="notas-fiscais/naturezas-saida" element={<SettingsPlaceholder title="Naturezas de Operação de Saída" />} />
+        <Route path="notas-fiscais/venda/nfe" element={<SettingsPlaceholder title="Configuração da NFe" />} />
+        <Route path="notas-fiscais/venda/difal-nao-contribuinte" element={<SettingsPlaceholder title="ICMS DIFAL para Não Contribuinte" />} />
+        <Route path="notas-fiscais/venda/difal-st" element={<SettingsPlaceholder title="Cálculo de ST para Consumidor Contribuinte - DIFAL" />} />
+        <Route path="notas-fiscais/venda/intermediadores" element={<SettingsPlaceholder title="Cadastro de Intermediadores" />} />
+        <Route path="notas-fiscais/venda/marcadores" element={<SettingsPlaceholder title="Marcadores nas Notas de Saída" />} />
+        <Route path="notas-fiscais/entrada/configuracoes" element={<SettingsPlaceholder title="Configuração das Notas de Entrada" />} />
+        <Route path="notas-fiscais/entrada/marcadores" element={<SettingsPlaceholder title="Marcadores nas Notas de Entrada" />} />
+        <Route path="notas-fiscais/servico/nfse" element={<SettingsPlaceholder title="Configuração da NFSe" />} />
+        <Route path="notas-fiscais/servico/marcadores" element={<SettingsPlaceholder title="Marcadores nas Notas de Serviço" />} />
+
+        {/* Finanças */}
+        <Route path="financas/geral" element={<SettingsPlaceholder title="Configurações Gerais (Finanças)" />} />
+        <Route path="financas/categorias" element={<CategoriasFinanceiras />} />
+        <Route path="financas/formas-de-pagamento" element={<FormasPagamento />} />
+        <Route path="financas/contas-bancarias" element={<SettingsPlaceholder title="Cadastro de Contas Bancárias" />} />
+        <Route path="financas/gateways" element={<SettingsPlaceholder title="Cadastro de Gateways" />} />
+        <Route path="financas/contas-financeiras" element={<SettingsPlaceholder title="Cadastro de Contas Financeiras" />} />
+        <Route path="financas/contas-a-pagar" element={<SettingsPlaceholder title="Configurações do Contas a Pagar" />} />
+        <Route path="financas/contas-a-receber" element={<SettingsPlaceholder title="Configurações do Contas a Receber" />} />
+        <Route path="financas/envio-de-documentos" element={<SettingsPlaceholder title="Configurações do Envio de Documentos (Finanças)" />} />
+        <Route path="financas/marcadores-caixa" element={<SettingsPlaceholder title="Marcadores no Caixa" />} />
+        <Route path="financas/marcadores-cap" element={<SettingsPlaceholder title="Marcadores nas Contas a Pagar" />} />
+        <Route path="financas/marcadores-car" element={<SettingsPlaceholder title="Marcadores nas Contas a Receber" />} />
+
+        {/* Serviços */}
+        <Route path="servicos/ordens-de-servico" element={<SettingsPlaceholder title="Configurações das Ordens de Serviço" />} />
+        <Route path="servicos/contratos" element={<SettingsPlaceholder title="Configurações dos Contratos" />} />
+        <Route path="servicos/envio-de-documentos" element={<SettingsPlaceholder title="Configurações do Envio de Documentos (Serviços)" />} />
+        <Route path="servicos/marcadores-os" element={<SettingsPlaceholder title="Marcadores nas Ordens de Serviço" />} />
+        <Route path="servicos/marcadores-contratos" element={<SettingsPlaceholder title="Marcadores nos Contratos" />} />
+        <Route path="servicos/cnaes" element={<SettingsPlaceholder title="Cadastro de CNAEs" />} />
+        <Route path="servicos/campos-adicionais-os" element={<SettingsPlaceholder title="Campos Adicionais para Ordens de Serviço" />} />
+
+        {/* E-commerce */}
+        <Route path="ecommerce/geral" element={<SettingsPlaceholder title="Configurações Gerais (E-commerce)" />} />
+        <Route path="ecommerce/integracoes" element={<SettingsPlaceholder title="Integrações" />} />
+        <Route path="ecommerce/token-api" element={<SettingsPlaceholder title="Token API (E-commerce)" />} />
+
+        <Route path="*" element={<Navigate to="geral/alterar-dados-da-empresa" replace />} />
+      </Route>
+    </Routes>
   );
 };
 
-export default Usuarios;
+export default SettingsRoutes;

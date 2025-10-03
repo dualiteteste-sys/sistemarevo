@@ -1,173 +1,105 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useService } from '../../hooks/useService';
-import { Vendedor } from '../../types';
-import { permissionsConfig, PermissionItem, PermissionTab } from '../../config/permissionsConfig';
+import React, { useState, useMemo, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Filter, Mail, KeyRound } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
-import { Header } from '../../components/layout/Header';
+import { GlassInput } from '../../components/ui/GlassInput';
+import { Pagination } from '../../components/ui/Pagination';
+import { DataTable } from '../../components/ui/DataTable';
+import { useModalForm } from '../../hooks/useModalForm';
+import { Vendedor, SituacaoVendedor, Perfil } from '../../types';
+import { useService } from '../../hooks/useService';
+import { ConvidarUsuarioModal } from '../../components/settings/usuarios/ConvidarUsuarioModal';
+import toast from 'react-hot-toast';
+import { supabase } from '../../lib/supabaseClient';
 
-const PermissionCheckbox: React.FC<{
-  id: string;
-  label: string;
-  helpText: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}> = ({ id, label, helpText, checked, onChange }) => (
-  <div className="py-2">
-    <label htmlFor={id} className="flex items-start gap-3 cursor-pointer">
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="form-checkbox mt-1"
-      />
-      <div>
-        <span className="font-medium text-gray-800">{label}</span>
-        <p className="text-xs text-gray-500">{helpText}</p>
-      </div>
-    </label>
-  </div>
-);
-
-const PermissionGroup: React.FC<{
-  label: string;
-  items: PermissionItem[];
-  selectedPermissions: Set<string>;
-  onPermissionChange: (permissionId: string, checked: boolean) => void;
-}> = ({ label, items, selectedPermissions, onPermissionChange }) => (
-  <div className="bg-glass-50 p-4 rounded-xl border border-white/20">
-    <h4 className="font-semibold text-gray-800 mb-2">{label}</h4>
-    <div className="space-y-2">
-      {items.map(item => (
-        <PermissionCheckbox
-          key={item.id}
-          id={item.id}
-          label={item.label}
-          helpText={item.helpText}
-          checked={selectedPermissions.has(item.id)}
-          onChange={(checked) => onPermissionChange(item.id, checked)}
-        />
-      ))}
-    </div>
-  </div>
-);
-
-const UsuarioPermissoes: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const vendedorService = useService('vendedor');
-
-  const [vendedor, setVendedor] = useState<Vendedor | null>(null);
-  const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+export const Usuarios: React.FC = () => {
+  const [usuarios, setUsuarios] = useState<Perfil[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const loadData = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      const vendedorData = await vendedorService.repository.findById(id);
-      if (!vendedorData || !vendedorData.userId) {
-        toast.error('Usuário não encontrado ou não vinculado a uma conta de acesso.');
-        navigate('/configuracoes/usuarios');
-        return;
-      }
-      setVendedor(vendedorData);
-
-      const permissionsData = await vendedorService.getPermissions(vendedorData.userId);
-      setSelectedPermissions(new Set(permissionsData));
-    } catch (error) {
-      toast.error('Falha ao carregar dados do usuário.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, vendedorService, navigate]);
+  const [error, setError] = useState<string|null>(null);
+  const { isFormOpen, handleOpenCreateForm, handleCloseForm } = useModalForm();
+  const [filtro, setFiltro] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handlePermissionChange = (permissionId: string, checked: boolean) => {
-    setSelectedPermissions(prev => {
-      const newSet = new Set(prev);
-      if (checked) {
-        newSet.add(permissionId);
+    const fetchUsuarios = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from('perfis').select('*');
+      if (error) {
+        setError(error.message);
+        toast.error(error.message);
       } else {
-        newSet.delete(permissionId);
+        setUsuarios(data as Perfil[]);
       }
-      return newSet;
-    });
-  };
-
-  const handleSave = async () => {
-    if (!vendedor?.userId) return;
-    setIsSaving(true);
-    try {
-      await vendedorService.setPermissions(vendedor.userId, Array.from(selectedPermissions));
-      toast.success('Permissões salvas com sucesso!');
-      navigate('/configuracoes/usuarios');
-    } catch (error) {
-      toast.error('Falha ao salvar permissões.');
-      console.error(error);
-    } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
+    fetchUsuarios();
+  }, []);
+
+  const usuariosFiltrados = usuarios.filter(usuario =>
+    usuario.nomeCompleto.toLowerCase().includes(filtro.toLowerCase())
+  );
+
+  const handleInvite = async (email: string) => {
+    const { error } = await supabase.auth.inviteUserByEmail(email);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`Convite enviado para ${email}!`);
+    }
+    handleCloseForm();
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <Loader2 className="animate-spin text-blue-500" size={48} />
-      </div>
-    );
-  }
+  const handleEditPermissions = (userId: string) => {
+    navigate(`/configuracoes/usuarios/${userId}/permissoes`);
+  };
 
-  if (!vendedor) {
-    return (
-      <div className="text-center py-10 text-red-500">
-        <p>Usuário não encontrado.</p>
-      </div>
-    );
-  }
+  const columns = useMemo(() => [
+    { header: 'Nome', accessorKey: 'nomeCompleto', cell: (item: Perfil) => <p className="font-medium text-gray-800">{item.nomeCompleto}</p> },
+    { header: 'CPF', accessorKey: 'cpf' },
+  ], []);
 
   return (
-    <div>
-      <Header title="Permissões do Usuário" subtitle={vendedor.nome} />
-      
-      <div className="space-y-8">
-        {permissionsConfig.map((tab: PermissionTab) => (
-          <GlassCard key={tab.id}>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">{tab.label}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tab.groups.map(group => (
-                <PermissionGroup
-                  key={group.id}
-                  label={group.label}
-                  items={group.items}
-                  selectedPermissions={selectedPermissions}
-                  onPermissionChange={handlePermissionChange}
-                />
-              ))}
-            </div>
-          </GlassCard>
-        ))}
-      </div>
+    <>
+      <GlassCard className="mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-[250px]">
+            <GlassInput placeholder="Buscar por nome..." value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full max-w-md" />
+            <GlassButton icon={Filter} variant="secondary">Filtros</GlassButton>
+          </div>
+          <div className="flex items-center gap-2">
+            <GlassButton icon={Mail} onClick={handleOpenCreateForm}>Convidar Usuário</GlassButton>
+          </div>
+        </div>
+      </GlassCard>
 
-      <div className="mt-8 flex justify-between items-center">
-        <GlassButton variant="secondary" icon={ArrowLeft} onClick={() => navigate('/configuracoes/usuarios')}>
-          Voltar
-        </GlassButton>
-        <GlassButton icon={Save} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Salvando...' : 'Salvar Permissões'}
-        </GlassButton>
-      </div>
-    </div>
+      <GlassCard>
+        <DataTable
+          data={usuariosFiltrados}
+          columns={columns}
+          loading={loading && usuarios.length === 0}
+          error={error}
+          entityName="Usuário"
+          actions={(item) => (
+            <div className="flex items-center gap-2">
+              <GlassButton icon={KeyRound} variant="secondary" size="sm" onClick={() => handleEditPermissions(item.id)} title="Editar Permissões" />
+            </div>
+          )}
+        />
+        {/* <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={goToPage} /> */}
+      </GlassCard>
+
+      <AnimatePresence>
+        {isFormOpen && (
+          <ConvidarUsuarioModal
+            onInvite={handleInvite}
+            onCancel={handleCloseForm}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
-export default UsuarioPermissoes;
+export default Usuarios;

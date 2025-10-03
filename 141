@@ -1,222 +1,211 @@
-export interface PermissionItem {
+import {
+  SlidersHorizontal,
+  Users,
+  Warehouse,
+  ShoppingCart,
+  Receipt,
+  DollarSign,
+  Wrench,
+  Store,
+  Icon,
+  KeyRound,
+} from 'lucide-react';
+
+export interface SettingsMenuItem {
   id: string;
   label: string;
-  helpText: string;
+  icon: Icon;
+  children: {
+    id: string;
+    label: string;
+    path: string;
+    children?: {
+      id: string;
+      label: string;
+      path: string;
+    }[];
+  }[];
 }
 
-export interface PermissionGroup {
-  id: string;
-  label: string;
-  items: PermissionItem[];
-}
-
-export interface PermissionTab {
-  id: string;
-  label: string;
-  groups: PermissionGroup[];
-}
-
-export const permissionsConfig: PermissionTab[] = [
+export const settingsMenuItems: SettingsMenuItem[] = [
+  {
+    id: 'geral',
+    label: 'Geral',
+    icon: SlidersHorizontal,
+    children: [
+      { id: 'alterar-dados-empresa', label: 'Alterar dados da empresa', path: '/configuracoes/geral/alterar-dados-da-empresa' },
+      { id: 'usuarios', label: 'Usuários e permissões', path: '/configuracoes/geral/usuarios' },
+      { id: 'papeis-permissoes', label: 'Papéis e Permissões', path: '/configuracoes/geral/papeis-e-permissoes' },
+      { id: 'servidor-email', label: 'Configurações do servidor de e-mail', path: '/configuracoes/geral/servidor-de-email' },
+      { id: 'envio-documentos', label: 'Configurações do envio de documentos', path: '/configuracoes/geral/envio-de-documentos' },
+      { id: 'etiquetas', label: 'Configurações das etiquetas', path: '/configuracoes/geral/etiquetas' },
+      { id: 'agenda', label: 'Configurações da agenda', path: '/configuracoes/geral/agenda' },
+      { id: 'cancelamento-conta', label: 'Solicitar cancelamento da conta', path: '/configuracoes/geral/cancelamento-da-conta' },
+      {
+        id: 'outras-configuracoes',
+        label: 'Outras configurações',
+        path: '#',
+        children: [
+          { id: 'interface-usuario', label: 'Interface do usuário', path: '/configuracoes/geral/interface-do-usuario' },
+          { id: 'token-api', label: 'Token API', path: '/configuracoes/geral/token-api' },
+          { id: 'configuracoes-api', label: 'Configurações de API', path: '/configuracoes/geral/configuracoes-de-api' },
+        ],
+      },
+    ],
+  },
   {
     id: 'cadastros',
     label: 'Cadastros',
-    groups: [
-      { id: 'group-cad-embalagens', label: 'Embalagens', items: [{ id: 'cad-embalagens', label: 'Acesso a embalagens', helpText: 'Acesso a cadastro e relatórios de embalagens.' }] },
-      { id: 'group-cad-servicos', label: 'Serviços', items: [{ id: 'cad-servicos', label: 'Acesso a serviços', helpText: 'Gerencia itens de serviço no catálogo.' }] },
-      {
-        id: 'group-cad-produtos',
-        label: 'Produtos',
-        items: [
-          { id: 'cad-produtos', label: 'Acesso a produtos', helpText: 'Permite visualizar e manter o cadastro de produtos.' },
-          { id: 'cad-produtos-calc-volumes', label: 'Cálculo automático de volumes', helpText: 'Habilita cálculo de m³/embalagem no cadastro.' },
-          { id: 'cad-produtos-rel-precos', label: 'Relatório de Preços dos Produtos', helpText: 'Acessa relatório comparativo de preços.' },
-          { id: 'cad-produtos-editar-preco-lista', label: 'Editar preços direto na lista de preços', helpText: 'Permite alteração inline.' },
-        ],
-      },
-      {
-        id: 'group-cad-contatos',
-        label: 'Clientes e Fornecedores',
-        items: [
-          { id: 'cad-contatos', label: 'Acesso a clientes e fornecedores', helpText: 'Cadastro de clientes/fornecedores.' },
-          { id: 'cad-contatos-editar-limite-credito', label: 'Editar limite de crédito', helpText: 'Autoriza definir/alterar limite.' },
-          { id: 'cad-contatos-exportar', label: 'Exportar dados de contatos', helpText: 'Permite exportação (CSV/Excel).' },
-        ],
-      },
-      { id: 'group-cad-vendedores', label: 'Vendedores', items: [{ id: 'cad-vendedores', label: 'Acesso a vendedores', helpText: 'Gestão de cadastro de vendedores.' }] },
-      { id: 'group-cad-outros', label: 'Outros', items: [{ id: 'cad-produtos-grade', label: 'Variações nos produtos (grade)', helpText: 'Habilita grade/atributos de variação.' }] },
+    icon: Users,
+    children: [
+      { id: 'clientes', label: 'Configurações do cadastro de clientes', path: '/configuracoes/cadastros/clientes' },
+      { id: 'produtos', label: 'Configurações do cadastro de produtos', path: '/configuracoes/cadastros/produtos' },
+      { id: 'variacoes-produtos', label: 'Configurações de variações de produtos', path: '/configuracoes/cadastros/variacoes-de-produtos' },
+      { id: 'atributos-produtos', label: 'Configurações de atributos de produtos', path: '/configuracoes/cadastros/atributos-de-produtos' },
+      { id: 'marcas-produtos', label: 'Configurações de marcas de produtos', path: '/configuracoes/cadastros/marcas-de-produtos' },
+      { id: 'tabelas-medidas', label: 'Tabelas de medidas', path: '/configuracoes/cadastros/tabelas-de-medidas' },
+      { id: 'tags', label: 'Configurações das tags', path: '/configuracoes/cadastros/tags' },
+      { id: 'tipos-contato', label: 'Tipos de contato', path: '/configuracoes/cadastros/tipos-de-contato' },
+      { id: 'linhas-produto', label: 'Linhas de produto', path: '/configuracoes/cadastros/linhas-de-produto' },
     ],
   },
   {
     id: 'suprimentos',
     label: 'Suprimentos',
-    groups: [
-      {
-        id: 'group-sup-estoque',
-        label: 'Controle de Estoques',
-        items: [
-          { id: 'sup-estoque', label: 'Acesso ao módulo de estoque', helpText: 'Acesso aos menus de estoque.' },
-          { id: 'sup-estoque-depositos', label: 'Depósitos de Estoque', helpText: 'Cadastro/consulta de depósitos.' },
-          { id: 'sup-estoque-entradas-saidas', label: 'Entradas e Saídas de Estoque', helpText: 'Lançamentos e ajustes.' },
-          { id: 'sup-estoque-saldos', label: 'Saldos em Estoque', helpText: 'Consulta de saldos por depósito.' },
-          { id: 'sup-estoque-mais-circulacao', label: 'Produtos com Maior Circulação', helpText: 'Relatório de giro.' },
-          { id: 'sup-estoque-sem-mov', label: 'Produtos sem Movimentação', helpText: 'Itens parados.' },
-          { id: 'sup-estoque-abaixo-min', label: 'Produtos Abaixo do Estoque Mínimo', helpText: 'Alerta de ruptura.' },
-          { id: 'sup-estoque-visao-financeira', label: 'Visão Financeira do Estoque', helpText: 'Valoração e custo médio.' },
-          { id: 'sup-estoque-mov-produto', label: 'Movimentação de um Produto', helpText: 'Extrato por item.' },
-        ],
-      },
-      {
-        id: 'group-sup-ne',
-        label: 'Notas de Entrada',
-        items: [
-          { id: 'sup-notas-entrada', label: 'Acesso a notas de entrada', helpText: 'Consultas e relatórios de compras.' },
-          { id: 'sup-ne-por-operacao', label: 'NF de Compra por Operação', helpText: 'Relatório de NF por operação.' },
-          { id: 'sup-ne-por-fornecedor', label: 'NF por Fornecedor', helpText: 'Relatório de NF por fornecedor.' },
-          { id: 'sup-ne-por-produto', label: 'NF de Compra por Produto', helpText: 'Relatório de NF por produto.' },
-          { id: 'sup-ne-evolucao', label: 'Evolução de NFs de Compra', helpText: 'Relatório de evolução de compras.' },
-          { id: 'sup-ne-por-fornecedor-fantasia', label: 'NF por Fornecedor (Fantasia)', helpText: 'Relatório por nome fantasia.' },
-          { id: 'sup-ne-rel-numeracao', label: 'Relatório de Numeração de NFs', helpText: 'Relatório de numeração.' },
-        ],
-      },
-      {
-        id: 'group-sup-oc',
-        label: 'Ordens de Compra',
-        items: [
-          { id: 'sup-oc', label: 'Acesso ao módulo de OC', helpText: 'Acesso ao módulo de Ordens de Compra.' },
-          { id: 'sup-oc-listagem', label: 'Ordens de Compra', helpText: 'Criar/editar/consultar OCs.' },
-        ],
-      },
-      { id: 'group-sup-outros', label: 'Outros', items: [{ id: 'sup-produtos-preco-custo', label: 'Preço de custo nos produtos', helpText: 'Exibe custo no cadastro/consultas.' }] },
+    icon: Warehouse,
+    children: [
+      { id: 'depositos-estoque', label: 'Depósitos de estoque', path: '/configuracoes/suprimentos/depositos-de-estoque' },
+      { id: 'estoque', label: 'Configurações de estoque', path: '/configuracoes/suprimentos/estoque' },
+      { id: 'envio-documentos-suprimentos', label: 'Configurações do envio de documentos', path: '/configuracoes/suprimentos/envio-de-documentos' },
+      { id: 'marcadores-oc', label: 'Configurações dos marcadores nas ordens de compra', path: '/configuracoes/suprimentos/marcadores-oc' },
+      { id: 'ordens-compra', label: 'Configurações de ordens de compra', path: '/configuracoes/suprimentos/ordens-de-compra' },
     ],
   },
   {
     id: 'vendas',
     label: 'Vendas',
-    groups: [
-        { id: 'group-ven-ecommerce', label: 'E-commerce', items: [{ id: 'ven-pedidos-ecommerce', label: 'Pedidos no e-commerce', helpText: 'Consulta/gestão de pedidos integrados.' }] },
-        { id: 'group-ven-pedidos', label: 'Pedidos de Venda', items: [
-            { id: 'ven-pedidos', label: 'Acesso a pedidos de venda', helpText: 'PV: criar, editar, faturar.' },
-            { id: 'ven-pedidos-rel-producao', label: 'Relatório de Pedidos para Produção', helpText: 'Ordens/necessidades de produção.' },
-        ]},
-        { id: 'group-ven-expedicao', label: 'Expedição', items: [
-            { id: 'ven-expedicao', label: 'Acesso a expedição', helpText: 'Picking/packing/romaneio.' },
-            { id: 'ven-expedicao-relatorio', label: 'Relatório de expedição', helpText: 'Relatório de expedição.' },
-        ]},
-        { id: 'group-ven-nfs', label: 'Notas Fiscais (Vendas)', items: [
-            { id: 'ven-nfs', label: 'Acesso a notas fiscais', helpText: 'Consultas e relatórios fiscais de saída.' },
-            { id: 'ven-nfs-itens', label: 'Itens das NFs (consulta)', helpText: 'Consulta de itens das NFs.' },
-            { id: 'ven-nfs-por-operacao', label: 'NFs por Operação', helpText: 'Relatório de NFs por operação.' },
-            { id: 'ven-nfs-por-cliente', label: 'NFs por Cliente', helpText: 'Relatório de NFs por cliente.' },
-            { id: 'ven-nfs-por-produto', label: 'NFs por Produto', helpText: 'Relatório de NFs por produto.' },
-            { id: 'ven-nfs-evolucao-faturamento', label: 'Evolução do Faturamento', helpText: 'Relatório de evolução do faturamento.' },
-            { id: 'ven-nfs-rel-numeracao', label: 'Relatório de Numeração de NFs', helpText: 'Relatório de numeração de NFs.' },
-        ]},
-        { id: 'group-ven-crm', label: 'CRM', items: [
-            { id: 'ven-crm', label: 'Acesso ao CRM', helpText: 'Acesso ao módulo de CRM.' },
-            { id: 'ven-crm-relatorio', label: 'Relatório CRM', helpText: 'Relatório de CRM.' },
-        ]},
-        { id: 'group-ven-pdv', label: 'PDV', items: [
-            { id: 'ven-pdv', label: 'Acesso ao PDV', helpText: 'Acesso ao Ponto de Venda.' },
-            { id: 'ven-pdv-caixa', label: 'Controle de Caixa do PDV', helpText: 'Controle de caixa do PDV.' },
-            { id: 'ven-pdv-rel-caixa', label: 'Relatório de controle de caixa', helpText: 'Relatório de controle de caixa.' },
-        ]},
-        { id: 'group-ven-comissoes', label: 'Comissões', items: [{ id: 'ven-comissoes', label: 'Acesso a comissões', helpText: 'Consulta e fechamento de comissões.' }] },
-        { id: 'group-ven-propostas', label: 'Propostas Comerciais', items: [
-            { id: 'ven-propostas', label: 'Acesso a propostas', helpText: 'Gestão de propostas/orçamentos.' },
-            { id: 'ven-propostas-lista', label: 'Propostas Comerciais (lista)', helpText: 'Listagem de propostas.' },
-        ]},
-        { id: 'group-ven-devolucoes', label: 'Devoluções de venda', items: [{ id: 'ven-devolucoes', label: 'Acesso a devoluções', helpText: 'Autoriza registrar devoluções.' }] },
-        { id: 'group-ven-automacoes', label: 'Painel de Automações', items: [{ id: 'ven-painel-automacoes', label: 'Acesso ao painel', helpText: 'Acessa painel de automações.' }] },
-        { id: 'group-ven-relatorios', label: 'Relatórios', items: [
-            { id: 'ven-rel-vendas', label: 'Acesso a relatórios de vendas', helpText: 'Dash/relatórios de Vendas.' },
-            { id: 'ven-rel-financeiro', label: 'Relatório Financeiro de Vendas', helpText: 'Relatório financeiro de vendas.' },
-        ]},
+    icon: ShoppingCart,
+    children: [
+        { id: 'pdv', label: 'Configurações do PDV', path: '/configuracoes/vendas/pdv' },
+        { id: 'propostas-comerciais', label: 'Configurações das propostas comerciais', path: '/configuracoes/vendas/propostas-comerciais' },
+        { id: 'pedidos-venda', label: 'Configurações dos pedidos de venda', path: '/configuracoes/vendas/pedidos-de-venda' },
+        { id: 'envio-documentos-vendas', label: 'Configurações do envio de documentos', path: '/configuracoes/vendas/envio-de-documentos' },
+        { id: 'marcadores-nas-vendas', label: 'Configurações dos marcadores nas vendas', path: '/configuracoes/vendas/marcadores-nas-vendas' },
+        { id: 'marcadores-nas-propostas', label: 'Configurações dos marcadores nas propostas comerciais', path: '/configuracoes/vendas/marcadores-nas-propostas' },
+        { id: 'marcadores-nas-devolucoes', label: 'Configurações dos marcadores nas devoluções de vendas', path: '/configuracoes/vendas/marcadores-nas-devolucoes' },
+        { id: 'devolucoes-vendas', label: 'Configurações das devoluções de vendas', path: '/configuracoes/vendas/devolucoes-de-vendas' },
+        {
+            id: 'expedicao-logistica',
+            label: 'Expedição e Logística',
+            path: '#',
+            children: [
+                { id: 'formas-envio', label: 'Formas de envio', path: '/configuracoes/vendas/expedicao/formas-de-envio' },
+                { id: 'configuracoes-expedicao', label: 'Configurações da expedição', path: '/configuracoes/vendas/expedicao/configuracoes' },
+                { id: 'intelipost', label: 'Configurações da Intelipost', path: '/configuracoes/vendas/expedicao/intelipost' },
+            ]
+        },
+        {
+            id: 'crm',
+            label: 'CRM',
+            path: '#',
+            children: [
+                { id: 'configuracoes-crm', label: 'Configurações do CRM', path: '/configuracoes/vendas/crm/configuracoes' },
+                { id: 'marcadores-crm', label: 'Configurações dos marcadores no CRM', path: '/configuracoes/vendas/crm/marcadores' },
+                { id: 'estagios-crm', label: 'Configurações dos estágios no funil do CRM', path: '/configuracoes/vendas/crm/estagios' },
+            ]
+        }
+    ]
+  },
+  {
+    id: 'notas-fiscais',
+    label: 'Notas fiscais',
+    icon: Receipt,
+    children: [
+        {
+            id: 'configuracoes-gerais-nf',
+            label: 'Configurações gerais',
+            path: '#',
+            children: [
+                { id: 'dados-empresa-nf', label: 'Dados da empresa', path: '/configuracoes/notas-fiscais/dados-da-empresa' },
+                { id: 'certificado-digital', label: 'Configuração do certificado digital', path: '/configuracoes/notas-fiscais/certificado-digital' },
+                { id: 'ambiente-nf', label: 'Ambiente das notas fiscais', path: '/configuracoes/notas-fiscais/ambiente' },
+                { id: 'naturezas-entrada', label: 'Naturezas de operação de entrada (tributação)', path: '/configuracoes/notas-fiscais/naturezas-entrada' },
+                { id: 'naturezas-saida', label: 'Naturezas de operação de saída (tributação)', path: '/configuracoes/notas-fiscais/naturezas-saida' },
+            ]
+        },
+        {
+            id: 'nf-venda',
+            label: 'Notas fiscais de venda',
+            path: '#',
+            children: [
+                { id: 'config-nfe', label: 'Configuração da NFe', path: '/configuracoes/notas-fiscais/venda/nfe' },
+                { id: 'difal-nao-contribuinte', label: 'ICMS DIFAL para não contribuinte', path: '/configuracoes/notas-fiscais/venda/difal-nao-contribuinte' },
+                { id: 'difal-st', label: 'Cálculo diferenciado de ST para consumidor contribuintes – DIFAL', path: '/configuracoes/notas-fiscais/venda/difal-st' },
+                { id: 'intermediadores', label: 'Cadastro de intermediadores', path: '/configuracoes/notas-fiscais/venda/intermediadores' },
+                { id: 'marcadores-nf-saida', label: 'Marcadores nas notas de saída', path: '/configuracoes/notas-fiscais/venda/marcadores' },
+            ]
+        },
+        {
+            id: 'nf-entrada',
+            label: 'Notas fiscais de entrada',
+            path: '#',
+            children: [
+                { id: 'config-nf-entrada', label: 'Configuração das notas de entrada', path: '/configuracoes/notas-fiscais/entrada/configuracoes' },
+                { id: 'marcadores-nf-entrada', label: 'Marcadores nas notas de entrada', path: '/configuracoes/notas-fiscais/entrada/marcadores' },
+            ]
+        },
+        {
+            id: 'nf-servico',
+            label: 'Notas fiscais de serviço',
+            path: '#',
+            children: [
+                { id: 'config-nfse', label: 'Configuração da NFSe', path: '/configuracoes/notas-fiscais/servico/nfse' },
+                { id: 'marcadores-nf-servico', label: 'Marcadores nas notas de serviço', path: '/configuracoes/notas-fiscais/servico/marcadores' },
+            ]
+        }
     ]
   },
   {
     id: 'financas',
     label: 'Finanças',
-    groups: [
-      { id: 'group-fin-preferencias', label: 'Preferências', items: [{ id: 'fin-gateway', label: 'Gateway', helpText: 'Configurar meios de pagamento.' }] },
-      { id: 'group-fin-cap', label: 'Contas a Pagar', items: [
-          { id: 'fin-cap', label: 'Acesso a contas a pagar', helpText: 'Lançar/consultar despesas.' },
-          { id: 'fin-cap-relatorio', label: 'Relatório de Contas a Pagar', helpText: 'Relatório de contas a pagar.' },
-      ]},
-      { id: 'group-fin-car', label: 'Contas a Receber', items: [
-          { id: 'fin-car', label: 'Acesso a contas a receber', helpText: 'Lançar/consultar receitas.' },
-          { id: 'fin-car-recebimentos', label: 'Recebimentos', helpText: 'Registrar recebimentos.' },
-          { id: 'fin-car-relatorio', label: 'Relatório de Contas a Receber', helpText: 'Relatório de contas a receber.' },
-      ]},
-      { id: 'group-fin-caixa', label: 'Caixa', items: [
-          { id: 'fin-caixa', label: 'Acesso ao caixa', helpText: 'Movimentação e conciliações.' },
-          { id: 'fin-caixa-por-categoria', label: 'Entradas e Saídas por Categoria', helpText: 'Relatório por categoria.' },
-          { id: 'fin-caixa-por-cliente', label: 'Entradas e Saídas por Cliente', helpText: 'Relatório por cliente.' },
-      ]},
-      { id: 'group-fin-cobrancas', label: 'Cobranças Bancárias', items: [{ id: 'fin-cobrancas', label: 'Acesso a cobranças', helpText: 'Gestão de boletos/arquivos.' }] },
-      { id: 'group-fin-extratos', label: 'Extratos Bancários', items: [{ id: 'fin-extratos', label: 'Acesso a extratos', helpText: 'Consulta de extratos bancários.' }] },
-      { id: 'group-fin-conta-digital', label: 'Conta Digital', items: [{ id: 'fin-conta-digital', label: 'Acesso a conta digital', helpText: 'Acesso a conta digital.' }] },
-      { id: 'group-fin-relatorios', label: 'Relatórios', items: [
-          { id: 'fin-rel-fluxo-caixa', label: 'Fluxo de Caixa', helpText: 'Relatório de fluxo de caixa.' },
-          { id: 'fin-rel-balancete', label: 'Balancete', helpText: 'Relatório de balancete.' },
-      ]},
-      { id: 'group-fin-outros', label: 'Outros', items: [
-          { id: 'fin-banco-inter', label: 'Banco Inter', helpText: 'Integração específica.' },
-          { id: 'fin-fechamento', label: 'Fechamento do período financeiro', helpText: 'Fecha/abre competência.' },
-      ]},
+    icon: DollarSign,
+    children: [
+      { id: 'geral-financas', label: 'Configurações gerais', path: '/configuracoes/financas/geral' },
+      { id: 'categorias', label: 'Categorias de receita e despesa', path: '/configuracoes/financas/categorias' },
+      { id: 'formas-pagamento', label: 'Formas de pagamento', path: '/configuracoes/financas/formas-de-pagamento' },
+      { id: 'contas-bancarias', label: 'Cadastro de contas bancárias', path: '/configuracoes/financas/contas-bancarias' },
+      { id: 'gateways', label: 'Cadastro de gateways', path: '/configuracoes/financas/gateways' },
+      { id: 'contas-financeiras', label: 'Cadastro de contas financeiras', path: '/configuracoes/financas/contas-financeiras' },
+      { id: 'contas-pagar', label: 'Configurações do contas a pagar', path: '/configuracoes/financas/contas-a-pagar' },
+      { id: 'contas-receber', label: 'Configurações do contas a receber', path: '/configuracoes/financas/contas-a-receber' },
+      { id: 'envio-documentos-financas', label: 'Configurações do envio de documentos', path: '/configuracoes/financas/envio-de-documentos' },
+      { id: 'marcadores-caixa', label: 'Marcadores no caixa', path: '/configuracoes/financas/marcadores-caixa' },
+      { id: 'marcadores-cap', label: 'Marcadores nas contas a pagar', path: '/configuracoes/financas/marcadores-cap' },
+      { id: 'marcadores-car', label: 'Marcadores nas contas a receber', path: '/configuracoes/financas/marcadores-car' },
     ],
   },
   {
     id: 'servicos',
     label: 'Serviços',
-    groups: [
-        { id: 'group-srv-os', label: 'Ordens de Serviço', items: [
-            { id: 'srv-os', label: 'Acesso a ordens de serviço', helpText: 'Autorização para OS.' },
-            { id: 'srv-os-relatorio', label: 'Relatório de Ordens de Serviço', helpText: 'Relatório de OS.' },
-        ]},
-        { id: 'group-srv-ns', label: 'Notas de Serviço', items: [
-            { id: 'srv-ns', label: 'Acesso a notas de serviço', helpText: 'Emissão/consulta.' },
-            { id: 'srv-ns-relatorio', label: 'Relatório de Notas de Serviço', helpText: 'Relatório de NS.' },
-        ]},
-        { id: 'group-srv-contratos', label: 'Contratos', items: [
-            { id: 'srv-contratos', label: 'Acesso a contratos', helpText: 'Gestão de contratos.' },
-            { id: 'srv-contratos-inicio-fim', label: 'Início e Término de Contratos', helpText: 'Relatório de início e término.' },
-            { id: 'srv-contratos-inicio-fim-mes', label: 'Início e Término por Mês', helpText: 'Relatório mensal.' },
-        ]},
-        { id: 'group-srv-cobrancas', label: 'Cobranças', items: [{ id: 'srv-cobrancas', label: 'Acesso a cobranças', helpText: 'Cobranças recorrentes/avulsas.' }] },
+    icon: Wrench,
+    children: [
+      { id: 'ordens-servico', label: 'Configurações das ordens de serviço', path: '/configuracoes/servicos/ordens-de-servico' },
+      { id: 'contratos', label: 'Configurações dos contratos', path: '/configuracoes/servicos/contratos' },
+      { id: 'envio-documentos-servicos', label: 'Configurações do envio de documentos', path: '/configuracoes/servicos/envio-de-documentos' },
+      { id: 'marcadores-os', label: 'Marcadores nas ordens de serviço', path: '/configuracoes/servicos/marcadores-os' },
+      { id: 'marcadores-contratos', label: 'Marcadores nos contratos', path: '/configuracoes/servicos/marcadores-contratos' },
+      { id: 'cnaes', label: 'Cadastro de CNAEs', path: '/configuracoes/servicos/cnaes' },
+      { id: 'campos-adicionais-os', label: 'Campos adicionais para ordens de serviço', path: '/configuracoes/servicos/campos-adicionais-os' },
     ],
   },
   {
-    id: 'ferramentas',
-    label: 'Ferramentas',
-    groups: [
-        { id: 'group-fer-etiquetas', label: 'Etiquetas', items: [{ id: 'fer-etiq-config', label: 'Configuração de etiquetas', helpText: 'Define tipos/layouts de etiqueta.' }] },
-        { id: 'group-fer-outros', label: 'Outros', items: [{ id: 'fer-imp-exp-dados', label: 'Importação e exportação de dados', helpText: 'Autoriza importar/exportar.' }] },
-    ],
-  },
-  {
-    id: 'outros',
-    label: 'Outros',
-    groups: [
-        { id: 'group-outros', label: 'Outros', items: [
-            { id: 'out-upgrade', label: 'Upgrade de Conta', helpText: 'Acesso à tela de upgrade/planos.' },
-            { id: 'out-dashboard', label: 'Dashboard', helpText: 'Acesso ao painel inicial.' },
-            { id: 'out-totalizadores-listagens', label: 'Habilitar totalizadores nas listagens', helpText: 'Mostra totais nas listas.' },
-            { id: 'out-alterar-dados-empresa', label: 'Alterar Dados da Empresa', helpText: 'Atalho para tela de empresa.' },
-            { id: 'out-minha-conta', label: 'Minha conta (ERP)', helpText: 'Preferências da conta.' },
-            { id: 'out-nfse', label: 'NFSe', helpText: 'Notas Fiscais de Serviço (config/consulta).' },
-            { id: 'out-importacao-nfe-xml', label: 'Importação de NFe via XML', helpText: 'Importer arquivos XML.' },
-            { id: 'out-servidor-email', label: 'Configurações do Servidor de E-mail', helpText: 'SMTP/envio de documentos.' },
-            { id: 'out-grupos-tags', label: 'Cadastro de Grupos de Tags', helpText: 'Gerir grupos.' },
-            { id: 'out-tags', label: 'Cadastro de Tags', helpText: 'CRUD de tags.' },
-            { id: 'out-importador-cadastros', label: 'Importador de Cadastros', helpText: 'Wizard de importação.' },
-            { id: 'out-sigep-web', label: 'Sigep Web', helpText: 'Integração Correios.' },
-            { id: 'out-nfe', label: 'Nota Fiscal Eletrônica', helpText: 'NFe geral.' },
-            { id: 'out-api-ws', label: 'API para Web Services', helpText: 'Chaves/escopos de API.' },
-            { id: 'out-intelipost', label: 'Integração com Intelipost', helpText: 'Gateway de frete/logística.' },
-            { id: 'out-usuarios', label: 'Usuários', helpText: 'Gerir contas/convites.' },
-            { id: 'out-pagamentos', label: 'Pagamentos', helpText: 'Central de pagamentos.' },
-            { id: 'out-emissao-boletos', label: 'Emissão de Boletos', helpText: 'Gerar boletos.' },
-        ]}
+    id: 'ecommerce',
+    label: 'E-commerce',
+    icon: Store,
+    children: [
+      { id: 'geral-ecommerce', label: 'Configurações gerais', path: '/configuracoes/ecommerce/geral' },
+      { id: 'integracoes', label: 'Integrações', path: '/configuracoes/ecommerce/integracoes' },
+      { id: 'token-api-ecommerce', label: 'Token API', path: '/configuracoes/ecommerce/token-api' },
     ],
   },
 ];

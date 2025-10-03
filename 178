@@ -1,46 +1,63 @@
 import { useState, useCallback, useEffect } from 'react';
-import { FaturaVenda } from '../../types';
+import { OrdemCompra, OrdemCompraItem } from '../../types';
 import { useService } from '../useService';
+import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
 
-export const useNotaFiscal = () => {
-  const [faturas, setFaturas] = useState<FaturaVenda[]>([]);
+export const useOrdemCompra = () => {
+  const [ordensCompra, setOrdensCompra] = useState<OrdemCompra[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-
-  const service = useService('notaFiscal');
   
+  const service = useService('ordemCompra');
+
   const totalPages = Math.ceil(totalItems / PAGE_SIZE);
 
-  const loadFaturas = useCallback(async (page: number) => {
+  const loadOrdensCompra = useCallback(async (page: number) => {
     try {
       setLoading(true);
       setError(null);
-      const { data, count } = await service.getAllFaturas({ page, pageSize: PAGE_SIZE });
-      setFaturas(data);
+      const { data, count } = await service.getAll({ page, pageSize: PAGE_SIZE });
+      setOrdensCompra(data);
       setTotalItems(count);
       setCurrentPage(page);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar notas fiscais';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar ordens de compra';
       setError(errorMessage);
-      console.error(err);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   }, [service]);
+
+  const createOrdemCompra = async (
+    ordemData: Partial<Omit<OrdemCompra, 'id' | 'createdAt' | 'updatedAt'>>,
+    itensData: Omit<OrdemCompraItem, 'id' | 'createdAt' | 'updatedAt' | 'ordemCompraId'>[]
+  ) => {
+    const promise = service.createWithItems(ordemData, itensData);
+    toast.promise(promise, {
+      loading: 'Criando ordem de compra...',
+      success: () => {
+        loadOrdensCompra(1);
+        return 'Ordem de compra criada com sucesso!';
+      },
+      error: (err) => `Falha ao criar ordem: ${err.message}`,
+    });
+    return promise;
+  };
   
   useEffect(() => {
-    loadFaturas(1);
-  }, [loadFaturas]);
+    loadOrdensCompra(1);
+  }, [loadOrdensCompra]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages && page !== currentPage) {
-      loadFaturas(page);
+      loadOrdensCompra(page);
     }
   };
 
-  return { faturas, loading, error, loadFaturas, currentPage, totalPages, goToPage };
+  return { ordensCompra, loading, error, createOrdemCompra, loadOrdensCompra, currentPage, totalPages, goToPage };
 };

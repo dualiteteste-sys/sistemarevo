@@ -1,112 +1,48 @@
 import { BaseRepository } from './BaseRepository';
-import { ContaPagar, ContaPagarAnexo } from '../types';
-import { snakeToCamel, camelToSnake } from '../lib/utils';
+		import { ContaReceber, ContaReceberAnexo } from '../types';
+		import { snakeToCamel, camelToSnake } from '../lib/utils';
 
-export class ContasPagarRepository extends BaseRepository<ContaPagar> {
-  constructor() {
-    super('contas_pagar');
-  }
+		export class ContasReceberRepository extends BaseRepository<ContaReceber> {
+		  constructor() {
+		    super('contas_receber');
+		  }
 
-  protected createEntity(data: any): ContaPagar {
-    return data as ContaPagar;
-  }
+		  protected createEntity(data: any): ContaReceber {
+		    return data as ContaReceber;
+		  }
 
-  async findAll(): Promise<ContaPagar[]> {
-    const selectString = 'id, descricao, data_vencimento, data_pagamento, valor, status, fornecedor:clientes!fornecedor_id ( id, nome )';
-    const { data } = await super.findAll({}, selectString);
-    return data || [];
-  }
+		  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: ContaReceber[]; count: number }> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.findAll bloqueada.');
+		    return { data: [], count: 0 };
+		  }
 
-  async findById(id: string): Promise<ContaPagar | null> {
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select('*, fornecedor:clientes!fornecedor_id ( id, nome )')
-      .eq('id', id)
-      .single();
+		  async findByCompetencia(competencia: string): Promise<Pick<ContaReceber, 'id' | 'contratoId' | 'dataVencimento'>[]> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.findByCompetencia bloqueada.');
+		    return [];
+		  }
 
-    if (error && error.code !== 'PGRST116') {
-        this.handleError(error, 'findById');
-    }
-    if (!data) return null;
-    
-    const conta = snakeToCamel(data) as ContaPagar;
+		  async findById(id: string): Promise<ContaReceber | null> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.findById bloqueada.');
+		    return null;
+		  }
+		  
+		  async create(data: Partial<Omit<ContaReceber, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ContaReceber> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.create bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
 
-    const { data: anexosData, error: anexosError } = await this.supabase
-        .from('contas_pagar_anexos')
-        .select('*')
-        .eq('conta_pagar_id', id);
-    this.handleError(anexosError, 'findById (anexos)');
-    conta.anexos = snakeToCamel(anexosData || []) as ContaPagarAnexo[];
+		  async update(id: string, updates: Partial<ContaReceber>): Promise<ContaReceber> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.update bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
 
-    return conta;
-  }
+		  async uploadAnexo(contaId: string, file: File): Promise<string> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.uploadAnexo bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
 
-  async create(data: Partial<Omit<ContaPagar, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ContaPagar> {
-    const { anexos, ...contaData } = data;
-    const newConta = await super.create(contaData as any);
-
-    if (anexos && anexos.length > 0) {
-      const anexosParaInserir = anexos.map(anexo => ({
-        ...camelToSnake(anexo),
-        conta_pagar_id: newConta.id,
-      }));
-      const { data: insertedAnexos, error: anexosError } = await this.supabase
-        .from('contas_pagar_anexos')
-        .insert(anexosParaInserir)
-        .select();
-      this.handleError(anexosError, 'create (anexos)');
-      newConta.anexos = snakeToCamel(insertedAnexos || []) as ContaPagarAnexo[];
-    }
-
-    return newConta;
-  }
-
-  async update(id: string, updates: Partial<ContaPagar>): Promise<ContaPagar> {
-    const { anexos, ...contaUpdates } = updates;
-    const updatedConta = await super.update(id, contaUpdates);
-
-    if (anexos) {
-        const novosAnexos = anexos.filter(a => !a.id);
-        if(novosAnexos.length > 0) {
-            const anexosParaInserir = novosAnexos.map(anexo => ({
-              ...camelToSnake(anexo),
-              conta_pagar_id: id,
-            }));
-            const { data: insertedAnexos, error: anexosError } = await this.supabase
-              .from('contas_pagar_anexos')
-              .insert(anexosParaInserir)
-              .select();
-            this.handleError(anexosError, 'update (anexos)');
-            updatedConta.anexos = [...(updatedConta.anexos || []), ...snakeToCamel(insertedAnexos || []) as ContaPagarAnexo[]];
-        }
-    }
-
-    return updatedConta;
-  }
-
-  async uploadAnexo(contaId: string, file: File): Promise<string> {
-    const filePath = `contas-a-pagar/${contaId}/${Date.now()}-${file.name}`;
-    const { error } = await this.supabase.storage
-      .from('anexos-financeiro')
-      .upload(filePath, file);
-
-    if (error) {
-      this.handleError(error, 'uploadAnexo');
-      throw new Error(error.message);
-    }
-    return filePath;
-  }
-
-  async deleteAnexo(anexoId: string, filePath: string): Promise<void> {
-    const { error: dbError } = await this.supabase
-      .from('contas_pagar_anexos')
-      .delete()
-      .eq('id', anexoId);
-    this.handleError(dbError, 'deleteAnexo (db)');
-
-    const { error: storageError } = await this.supabase.storage
-      .from('anexos-financeiro')
-      .remove([filePath]);
-    this.handleError(storageError, 'deleteAnexo (storage)');
-  }
-}
+		  async deleteAnexo(anexoId: string, filePath: string): Promise<void> {
+		    console.warn('[Modo de Construção] Chamada para ContasReceberRepository.deleteAnexo bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+		}

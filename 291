@@ -1,77 +1,53 @@
-import { ContaReceber, StatusContaReceber, ContaReceberAnexo, TipoMovimentoCaixa } from '../types';
-import { IContasReceberService } from './interfaces';
-import { IContasReceberRepository, IFluxoCaixaRepository } from '../repositories/interfaces';
+import { Contrato, ContratoAnexo } from '../types';
+import { IContratoService } from './interfaces';
+import { IContratoRepository } from '../repositories/interfaces';
 import { camelToSnake, snakeToCamel } from '../lib/utils';
 
-export class ContasReceberService implements IContasReceberService {
-  private repository: IContasReceberRepository;
-  private fluxoCaixaRepository: IFluxoCaixaRepository;
+export class ContratoService implements IContratoService {
+  public repository: IContratoRepository;
 
-  constructor(repository: IContasReceberRepository, fluxoCaixaRepository: IFluxoCaixaRepository) {
+  constructor(repository: IContratoRepository) {
     this.repository = repository;
-    this.fluxoCaixaRepository = fluxoCaixaRepository;
   }
 
-  async getAllContasReceber(options: { page?: number; pageSize?: number } = {}): Promise<{ data: ContaReceber[]; count: number }> {
+  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Contrato[]; count: number }> {
     return this.repository.findAll(options);
   }
 
-  async createContaReceber(data: Partial<Omit<ContaReceber, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ContaReceber> {
-    const contaParaCriar = {
-      ...data,
-      clienteId: data.clienteId || null,
-      status: StatusContaReceber.A_RECEBER,
-    };
-    return this.repository.create(contaParaCriar as any);
+  async create(data: Omit<Contrato, 'id' | 'createdAt' | 'updatedAt' | 'anexos'>): Promise<Contrato> {
+    return this.repository.create(data);
   }
 
-  async updateContaReceber(id: string, data: Partial<ContaReceber>): Promise<ContaReceber> {
+  async update(id: string, data: Partial<Contrato>): Promise<Contrato> {
     return this.repository.update(id, data);
   }
 
-  async liquidarConta(id: string): Promise<ContaReceber> {
-    const conta = await this.repository.findById(id);
-    if (!conta) throw new Error('Conta a receber não encontrada.');
-    if (conta.status === StatusContaReceber.RECEBIDO) throw new Error('Esta conta já foi recebida.');
-
-    const updatedConta = await this.repository.update(id, {
-      status: StatusContaReceber.RECEBIDO,
-      dataPagamento: new Date(),
-    });
-
-    await this.fluxoCaixaRepository.create({
-      data: new Date(),
-      descricao: `Recebimento: ${conta.descricao || `Fatura de ${conta.cliente?.nome}`}`,
-      valor: conta.valor,
-      tipo: TipoMovimentoCaixa.ENTRADA,
-      contaReceberId: conta.id,
-    } as any);
-
-    return updatedConta;
+  async delete(id: string): Promise<void> {
+    return this.repository.delete(id);
   }
-  
-  async uploadAnexo(contaId: string, file: File): Promise<ContaReceberAnexo> {
-    const filePath = await this.repository.uploadAnexo(contaId, file);
+
+  async uploadAnexo(contratoId: string, file: File): Promise<ContratoAnexo> {
+    const filePath = await this.repository.uploadAnexo(contratoId, file);
     
     const anexoData = {
-      contaReceberId: contaId,
+      contratoId,
       nomeArquivo: file.name,
       path: filePath,
       tamanho: file.size,
       tipo: file.type,
     };
     const { data: newAnexo, error } = await this.repository.supabase
-      .from('contas_receber_anexos')
+      .from('contrato_anexos')
       .insert(camelToSnake(anexoData))
       .select()
       .single();
 
     if (error) {
-      await this.repository.supabase.storage.from('anexos-financeiro').remove([filePath]);
+      await this.repository.supabase.storage.from('anexos-gerais').remove([filePath]);
       throw new Error(error.message);
     }
     
-    return snakeToCamel(newAnexo) as ContaReceberAnexo;
+    return snakeToCamel(newAnexo) as ContratoAnexo;
   }
 
   async deleteAnexo(anexoId: string, filePath: string): Promise<void> {
@@ -80,7 +56,7 @@ export class ContasReceberService implements IContasReceberService {
 
   getAnexoPublicUrl(filePath: string): string {
     const { data } = this.repository.supabase.storage
-      .from('anexos-financeiro')
+      .from('anexos-gerais')
       .getPublicUrl(filePath);
     return data.publicUrl;
   }

@@ -1,65 +1,66 @@
-import { useState, useCallback, useEffect } from 'react';
-import { CrmOportunidade } from '../../types';
+import { useState, useEffect, useCallback } from 'react';
+import { DashboardStats, FaturamentoMensal } from '../../types';
 import { useService } from '../useService';
 import toast from 'react-hot-toast';
 
-export const useCrm = () => {
-  const [oportunidades, setOportunidades] = useState<CrmOportunidade[]>([]);
+export const useDashboard = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [faturamentoMensal, setFaturamentoMensal] = useState<FaturamentoMensal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const service = useService('crm');
+  const service = useService('dashboard');
 
-  const loadOportunidades = useCallback(async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await service.getAll();
-      setOportunidades(data);
+      const [statsData, faturamentoData] = await Promise.all([
+        service.getDashboardStats(),
+        service.getFaturamentoMensal(),
+      ]);
+      setStats(statsData);
+      setFaturamentoMensal(faturamentoData);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar oportunidades';
-      setError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      
+      // Verifica se o erro é por função não encontrada, o que é esperado após o reset.
+      const isFunctionNotFoundError = (
+        errorMessage.includes('does not exist') || 
+        errorMessage.includes('PGRST202')
+      );
+
+      if (isFunctionNotFoundError) {
+        // Define um estado padrão e vazio para que a UI não quebre.
+        console.warn('Funções do dashboard não encontradas. Isso é esperado após o reset do banco de dados. Exibindo UI sem dados.');
+        setStats({
+          faturamentoTotalMesAtual: 0,
+          faturamentoTotalMesAnterior: 0,
+          novosClientesMesAtual: 0,
+          novosClientesMesAnterior: 0,
+          pedidosRealizadosMesAtual: 0,
+          pedidosRealizadosMesAnterior: 0,
+        });
+        setFaturamentoMensal([]);
+        setError(null); // Limpa o erro para não exibir mensagem na tela.
+      } else {
+        // Para qualquer outro erro, exibe a notificação.
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
   }, [service]);
 
-  const createOportunidade = async (data: Partial<Omit<CrmOportunidade, 'id' | 'createdAt' | 'updatedAt'>>) => {
-    const promise = service.create(data as any);
-    toast.promise(promise, {
-      loading: 'Criando oportunidade...',
-      success: () => {
-        loadOportunidades();
-        return 'Oportunidade criada com sucesso!';
-      },
-      error: (err) => `Falha ao criar: ${err.message}`,
-    });
-    await promise;
-  };
-  
-  const updateOportunidade = async (id: string, data: Partial<CrmOportunidade>) => {
-    const isStatusUpdateOnly = Object.keys(data).length === 1 && 'etapa' in data;
-    
-    const originalOportunidades = oportunidades;
-    
-    setOportunidades(prev => prev.map(op => op.id === id ? { ...op, ...data } as CrmOportunidade : op));
-
-    try {
-      const updated = await service.update(id, data);
-      setOportunidades(prev => prev.map(op => op.id === id ? updated : op));
-      if (!isStatusUpdateOnly) {
-        toast.success('Oportunidade atualizada com sucesso!');
-      }
-    } catch (err) {
-      setOportunidades(originalOportunidades);
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar oportunidade';
-      toast.error(`Falha ao atualizar: ${errorMessage}`);
-      throw err;
-    }
-  };
-
   useEffect(() => {
-    loadOportunidades();
-  }, [loadOportunidades]);
+    loadDashboardData();
+  }, [loadDashboardData]);
 
-  return { oportunidades, loading, error, loadOportunidades, createOportunidade, updateOportunidade };
+  return {
+    stats,
+    faturamentoMensal,
+    loading,
+    error,
+    loadDashboardData,
+  };
 };

@@ -1,37 +1,39 @@
-import { Servico, SituacaoServico } from '../types';
-import { IServicoService } from './interfaces';
-import { IServicoRepository } from '../repositories/interfaces';
+import { Vendedor } from '../types';
+import { IVendedorService } from './interfaces';
+import { IVendedorRepository } from '../repositories/interfaces';
 
-export class ServicoService implements IServicoService {
-  public repository: IServicoRepository;
+export class VendedorService implements IVendedorService {
+  public repository: IVendedorRepository;
 
-  constructor(repository: IServicoRepository) {
+  constructor(repository: IVendedorRepository) {
     this.repository = repository;
   }
 
-  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Servico[]; count: number }> {
+  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Vendedor[]; count: number }> {
     return this.repository.findAll(options);
   }
 
-  async create(data: Omit<Servico, 'id' | 'createdAt' | 'updatedAt'>): Promise<Servico> {
-    // Garante que o preço seja um número
-    const dataToCreate = {
-      ...data,
-      preco: Number(data.preco) || 0,
-    };
-    return this.repository.create(dataToCreate);
+  async search(query: string): Promise<Pick<Vendedor, 'id' | 'nome'>[]> {
+    return this.repository.search(query);
   }
 
-  async update(id: string, data: Partial<Servico>): Promise<Servico> {
-    const dataToUpdate = { ...data };
-    if (data.preco !== undefined) {
-      dataToUpdate.preco = Number(data.preco) || 0;
-    }
-    return this.repository.update(id, dataToUpdate);
+  async create(data: Omit<Vendedor, 'id' | 'createdAt' | 'updatedAt'>): Promise<Vendedor> {
+    return this.repository.create(data);
+  }
+
+  async update(id: string, data: Partial<Vendedor>): Promise<Vendedor> {
+    return this.repository.update(id, data);
   }
 
   async delete(id: string): Promise<void> {
-    // Em vez de deletar, inativamos o serviço para manter a integridade dos dados históricos.
-    await this.repository.update(id, { situacao: SituacaoServico.INATIVO });
+    return this.repository.delete(id);
+  }
+
+  async getPermissions(userId: string): Promise<string[]> {
+    return this.repository.getPermissions(userId);
+  }
+
+  async setPermissions(userId: string, permissions: string[]): Promise<void> {
+    return this.repository.setPermissions(userId, permissions);
   }
 }

@@ -1,22 +1,33 @@
-import { BaseRepository } from './BaseRepository';
-import { Embalagem } from '../types';
+import { supabase } from '../lib/supabaseClient';
+		import { PostgrestError } from '@supabase/supabase-js';
+		import { snakeToCamel, camelToSnake } from '../lib/utils';
+		import { ProdutoComEstoque, EstoqueMovimento } from '../types';
+		import { IEstoqueRepository } from './interfaces';
 
-export class EmbalagemRepository extends BaseRepository<Embalagem> {
-  constructor() {
-    super('embalagens');
-  }
+		export class EstoqueRepository implements IEstoqueRepository {
+		  protected supabase = supabase;
+		  protected viewName: string = 'produtos_com_estoque';
+		  protected tableName: string = 'estoque_movimentos';
 
-  protected createEntity(data: Omit<Embalagem, 'id' | 'createdAt' | 'updatedAt'>): Embalagem {
-    return {
-      ...data,
-      id: '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }
+		  protected handleError(error: PostgrestError | null, context?: string): void {
+		    if (error) {
+		      console.error(`Error in EstoqueRepository${context ? ` (${context})` : ''}:`, error);
+		      throw new Error(error.message);
+		    }
+		  }
 
-  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Embalagem[]; count: number }> {
-    const selectString = 'id, descricao, tipo, largura_cm, altura_cm, comprimento_cm, diametro_cm, peso_kg';
-    return super.findAll(options, selectString);
-  }
-}
+		  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: ProdutoComEstoque[]; count: number }> {
+		    console.warn('[Modo de Construção] Chamada para EstoqueRepository.findAll bloqueada.');
+		    return { data: [], count: 0 };
+		  }
+
+		  async findHistoryByProductId(produtoId: string): Promise<EstoqueMovimento[]> {
+		    console.warn('[Modo de Construção] Chamada para EstoqueRepository.findHistoryByProductId bloqueada.');
+		    return [];
+		  }
+
+		  async createMovimento(movimento: Omit<EstoqueMovimento, 'id' | 'createdAt' | 'updatedAt'>): Promise<EstoqueMovimento> {
+		    console.warn('[Modo de Construção] Chamada para EstoqueRepository.createMovimento bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+		}

@@ -1,23 +1,27 @@
-import { DevolucaoVenda, DevolucaoVendaItem } from '../types';
-import { IDevolucaoVendaService } from './interfaces';
-import { IDevolucaoVendaRepository } from '../repositories/interfaces';
+import { Embalagem } from '../types';
+import { IEmbalagemService } from './interfaces';
+import { IEmbalagemRepository } from '../repositories/interfaces';
 
-export class DevolucaoVendaService implements IDevolucaoVendaService {
-  public repository: IDevolucaoVendaRepository;
+export class EmbalagemService implements IEmbalagemService {
+  public repository: IEmbalagemRepository;
 
-  constructor(repository: IDevolucaoVendaRepository) {
+  constructor(repository: IEmbalagemRepository) {
     this.repository = repository;
   }
 
-  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: DevolucaoVenda[]; count: number }> {
+  async getAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Embalagem[]; count: number }> {
     return this.repository.findAll(options);
   }
 
-  async create(
-    devolucaoData: Omit<DevolucaoVenda, 'id' | 'createdAt' | 'updatedAt' | 'itens'>,
-    itensData: Omit<DevolucaoVendaItem, 'id' | 'createdAt' | 'updatedAt' | 'devolucaoVendaId'>[]
-  ): Promise<DevolucaoVenda> {
-    // Aqui você poderia adicionar lógica de negócio, como gerar um movimento de estoque
-    return (this.repository as any).createWithItems(devolucaoData, itensData);
+  async create(data: Omit<Embalagem, 'id' | 'createdAt' | 'updatedAt'>): Promise<Embalagem> {
+    return this.repository.create(data);
+  }
+
+  async update(id: string, data: Partial<Embalagem>): Promise<Embalagem> {
+    return this.repository.update(id, data);
+  }
+
+  async delete(id: string): Promise<void> {
+    return this.repository.delete(id);
   }
 }

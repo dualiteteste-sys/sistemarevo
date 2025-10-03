@@ -1,8 +1,8 @@
-import { EstoqueRepository } from '../../repositories/EstoqueRepository';
-import { EstoqueService } from '../EstoqueService';
-import { IEstoqueService } from '../interfaces';
+import { ExpedicaoRepository } from '../../repositories/ExpedicaoRepository';
+import { ExpedicaoService } from '../ExpedicaoService';
+import { IExpedicaoService } from '../interfaces';
 
-export const createEstoqueService = (): IEstoqueService => {
-  const repository = new EstoqueRepository();
-  return new EstoqueService(repository);
+export const createExpedicaoService = (): IExpedicaoService => {
+  const repository = new ExpedicaoRepository();
+  return new ExpedicaoService(repository);
 };

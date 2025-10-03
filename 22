@@ -1,119 +1,52 @@
-import React from 'react';
-		import { Control, Controller, UseFormWatch, UseFormSetValue } from 'react-hook-form';
-		import { IMaskInput } from 'react-imask';
-		import { TipoPessoa, ContribuinteICMS } from '../../../../types';
-		import { GlassInput } from '../../../ui/GlassInput';
-		import { InputWrapper } from '../../../ui/InputWrapper';
-		import { ClienteFormData } from '../../../../schemas/clienteSchema';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { GlassButton } from '../ui/GlassButton';
 
-		interface InformacoesGeraisSectionProps {
-		  control: Control<ClienteFormData>;
-		  watch: UseFormWatch<ClienteFormData>;
-		  setValue: UseFormSetValue<ClienteFormData>;
-		}
+interface EnviarBoletosModalProps {
+  onEnviar: (apenasRegistrados: boolean) => void;
+  onCancel: () => void;
+  loading?: boolean;
+}
 
-		const contribuinteLabels: Record<string, string> = {
-		  'CONTRIBUINTE': '1 - Contribuinte ICMS',
-		  'CONTRIBUINTE_ISENTO': '2 - Contribuinte isento de Inscrição',
-		  'NAO_CONTRIBUINTE': '9 - Não Contribuinte',
-		};
+export const EnviarBoletosModal: React.FC<EnviarBoletosModalProps> = ({ onEnviar, onCancel, loading }) => {
+  const [apenasRegistrados, setApenasRegistrados] = useState(false);
 
-		export const InformacoesGeraisSection: React.FC<InformacoesGeraisSectionProps> = ({ control, watch, setValue }) => {
-		  const tipoPessoa = watch('tipoPessoa');
-
-		  const isCliente = watch('isCliente');
-		  const isFornecedor = watch('isFornecedor');
-		  const isTransportadora = watch('isTransportadora');
-
-		  let contactType = 'Cliente'; // Default
-		  if (isFornecedor) contactType = 'Fornecedor';
-		  if (isTransportadora) contactType = 'Transportadora';
-
-		  const handleContactTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		    const value = e.target.value;
-		    setValue('isCliente', value === 'Cliente');
-		    setValue('isFornecedor', value === 'Fornecedor');
-		    setValue('isTransportadora', value === 'Transportadora');
-		  };
-
-		  return (
-		    <section>
-		      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Informações Gerais</h3>
-		      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-		        <Controller
-		          name="tipoPessoa"
-		          control={control}
-		          render={({ field }) => (
-		            <InputWrapper label="Tipo de Pessoa *">
-		              <select className="glass-input" {...field}>
-		                {Object.values(TipoPessoa).map(t => <option key={t} value={t}>{t}</option>)}
-		              </select>
-		            </InputWrapper>
-		          )}
-		        />
-		        {tipoPessoa === TipoPessoa.FISICA ? (
-		          <>
-		            <Controller name="cpfCnpj" control={control} render={({ field, fieldState }) => (
-		              <InputWrapper label="CPF" error={fieldState.error?.message}>
-		                <IMaskInput mask="000.000.000-00" value={field.value || ''} onAccept={field.onChange} className="glass-input" />
-		              </InputWrapper>
-		            )} />
-		            <Controller name="rg" control={control} render={({ field }) => (
-		              <InputWrapper label="RG">
-		                <GlassInput {...field} value={field.value || ''} maxLength={20} />
-		              </InputWrapper>
-		            )} />
-		            <Controller name="nome" control={control} render={({ field, fieldState }) => (
-		              <InputWrapper label="Nome *" error={fieldState.error?.message}>
-		                <GlassInput {...field} value={field.value || ''} maxLength={120} />
-		              </InputWrapper>
-		            )} />
-		          </>
-		        ) : (
-		          <>
-		            <Controller name="cpfCnpj" control={control} render={({ field, fieldState }) => (
-		              <InputWrapper label="CNPJ" error={fieldState.error?.message}>
-		                <IMaskInput mask="00.000.000/0000-00" value={field.value || ''} onAccept={field.onChange} className="glass-input" />
-		              </InputWrapper>
-		            )} />
-		            <Controller name="inscricaoEstadual" control={control} render={({ field }) => (
-		              <InputWrapper label="Inscrição Estadual">
-		                <GlassInput {...field} value={field.value || ''} maxLength={20} />
-		              </InputWrapper>
-		            )} />
-		            <Controller name="nome" control={control} render={({ field, fieldState }) => (
-		              <InputWrapper label="Razão Social *" error={fieldState.error?.message}>
-		                <GlassInput {...field} value={field.value || ''} maxLength={120} />
-		              </InputWrapper>
-		            )} />
-		          </>
-		        )}
-		        <Controller name="codigo" control={control} render={({ field }) => (
-		          <InputWrapper label="Código">
-		            <GlassInput {...field} value={field.value || ''} />
-		          </InputWrapper>
-		        )} />
-		        <Controller
-		          name="contribuinteIcms"
-		          control={control}
-		          render={({ field }) => (
-		            <InputWrapper label="Contribuinte ICMS">
-		              <select className="glass-input" {...field} value={field.value || ''}>
-		                {Object.entries(contribuinteLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-		              </select>
-		            </InputWrapper>
-		          )}
-		        />
-		        <div className="lg:col-span-2">
-		          <InputWrapper label="Tipo de Contato">
-		            <select className="glass-input" value={contactType} onChange={handleContactTypeChange}>
-		              <option value="Cliente">Cliente</option>
-		              <option value="Fornecedor">Fornecedor</option>
-		              <option value="Transportadora">Transportadora</option>
-		            </select>
-		          </InputWrapper>
-		        </div>
-		      </div>
-		    </section>
-		  );
-		};
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-gray-500/40 backdrop-blur flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-glass-100 rounded-2xl shadow-glass-lg border border-white/20 p-8 w-full max-w-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-xl font-bold text-gray-800 mb-6">Envio de Boletos para Cobrança</h3>
+        <div className="mb-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="form-checkbox"
+              checked={apenasRegistrados}
+              onChange={(e) => setApenasRegistrados(e.target.checked)}
+            />
+            <span className="text-sm text-gray-700">Enviar apenas boletos registrados</span>
+          </label>
+        </div>
+        <div className="flex justify-end gap-4">
+          <GlassButton variant="secondary" onClick={onCancel} disabled={loading}>
+            Cancelar
+          </GlassButton>
+          <GlassButton onClick={() => onEnviar(apenasRegistrados)} disabled={loading}>
+            {loading ? 'Enviando...' : 'Iniciar Envio'}
+          </GlassButton>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};

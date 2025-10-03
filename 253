@@ -1,48 +1,21 @@
-import { BaseRepository } from './BaseRepository';
-import { ContaReceber, Contrato } from '../types';
-import { snakeToCamel } from '../lib/utils';
+import { supabase } from '../lib/supabaseClient';
+		import { PostgrestError } from '@supabase/supabase-js';
+		import { snakeToCamel } from '../lib/utils';
+		import { Comissao } from '../types';
 
-export interface VisaoCobranca {
-  clienteId: string;
-  clienteNome: string;
-  clienteTelefone: string;
-  valorTotal: number;
-  contratosCount: number;
-  dataVencimento: Date;
-  statusIntegracao: 'pendente' | 'enviado' | 'erro'; // Simplificado
-}
+		export class ComissoesRepository {
+		  protected supabase = supabase;
+		  protected viewName: string = 'comissoes_view';
 
-export class CobrancasRepository extends BaseRepository<ContaReceber> {
-  constructor() {
-    super('contas_receber');
-  }
+		  protected handleError(error: PostgrestError | null, context?: string): void {
+		    if (error) {
+		      console.error(`Error in ComissoesRepository${context ? ` (${context})` : ''}:`, error);
+		      throw new Error(error.message);
+		    }
+		  }
 
-  protected createEntity(data: any): ContaReceber {
-    return data as ContaReceber;
-  }
-
-  async getVisaoCobrancas(competencia: string): Promise<VisaoCobranca[]> {
-    const [ano, mes] = competencia.split('-').map(Number);
-
-    const { data, error } = await this.supabase.rpc('get_visao_cobrancas', {
-      p_ano: ano,
-      p_mes: mes,
-    });
-
-    this.handleError(error, 'getVisaoCobrancas');
-    return (snakeToCamel(data) as VisaoCobranca[]) || [];
-  }
-
-  async getContratosParaFaturar(competencia: string): Promise<Contrato[]> {
-    const [ano, mes] = competencia.split('-').map(Number);
-    
-    // Otimizado: Chama a função RPC que filtra os contratos diretamente no banco de dados.
-    const { data, error } = await this.supabase.rpc('get_contratos_para_faturar', {
-      p_ano: ano,
-      p_mes: mes,
-    });
-    
-    this.handleError(error, 'getContratosParaFaturar');
-    return (snakeToCamel(data) as Contrato[]) || [];
-  }
-}
+		  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Comissao[]; count: number }> {
+		    console.warn('[Modo de Construção] Chamada para ComissoesRepository.findAll bloqueada.');
+		    return { data: [], count: 0 };
+		  }
+		}

@@ -1,8 +1,8 @@
-import { ServicoRepository } from '../../repositories/ServicoRepository';
-import { ServicoService } from '../ServicoService';
-import { IServicoService } from '../interfaces';
+import { VendedorRepository } from '../../repositories/VendedorRepository';
+import { VendedorService } from '../VendedorService';
+import { IVendedorService } from '../interfaces';
 
-export const createServicoService = (): IServicoService => {
-  const repository = new ServicoRepository();
-  return new ServicoService(repository);
+export const createVendedorService = (): IVendedorService => {
+  const repository = new VendedorRepository();
+  return new VendedorService(repository);
 };

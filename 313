@@ -1,8 +1,10 @@
-import { ClienteRepository } from '../../repositories/ClienteRepository';
-import { ClienteService } from '../ClienteService';
-import { IClienteService } from '../interfaces';
+import { CobrancasRepository } from '../../repositories/CobrancasRepository';
+import { ContasReceberRepository } from '../../repositories/ContasReceberRepository';
+import { CobrancasService } from '../CobrancasService';
+import { ICobrancasService } from '../interfaces';
 
-export const createClienteService = (): IClienteService => {
-  const repository = new ClienteRepository();
-  return new ClienteService(repository);
+export const createCobrancasService = (): ICobrancasService => {
+  const cobrancasRepository = new CobrancasRepository();
+  const contasReceberRepository = new ContasReceberRepository();
+  return new CobrancasService(cobrancasRepository, contasReceberRepository);
 };

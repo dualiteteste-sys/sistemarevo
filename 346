@@ -1,29 +1,26 @@
-export interface KPI {
-  title: string;
-  value: string;
-  icon: string;
-  trend: number;
-  color: string;
-}
+import { IEntity } from './base';
+import { PedidoVenda } from './pedidoVenda';
+import { Cliente } from './cliente';
 
-export interface Atividade {
-  id: string;
-  tipo: string;
+export interface DevolucaoVendaItem extends IEntity {
+  devolucaoVendaId: string;
+  pedidoVendaItemId: string;
+  produtoId?: string;
+  servicoId?: string;
   descricao: string;
-  timestamp: Date;
-  usuario: string;
+  quantidade: number;
+  valorUnitario: number;
+  valorTotal: number;
 }
 
-export interface DashboardStats {
-  faturamentoTotalMesAtual: number;
-  faturamentoTotalMesAnterior: number;
-  novosClientesMesAtual: number;
-  novosClientesMesAnterior: number;
-  pedidosRealizadosMesAtual: number;
-  pedidosRealizadosMesAnterior: number;
-}
-
-export interface FaturamentoMensal {
-  mes: string;
-  faturamento: number;
+export interface DevolucaoVenda extends IEntity {
+  numero: string;
+  pedidoVendaId: string;
+  pedidoVenda?: PedidoVenda;
+  clienteId: string;
+  cliente?: Cliente;
+  dataDevolucao: Date;
+  valorTotalDevolvido: number;
+  observacoes?: string;
+  itens: DevolucaoVendaItem[];
 }

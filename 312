@@ -1,8 +1,8 @@
-import { CategoriaFinanceiraRepository } from '../../repositories/CategoriaFinanceiraRepository';
-import { CategoriaFinanceiraService } from '../CategoriaFinanceiraService';
-import { ICategoriaFinanceiraService } from '../interfaces';
+import { ClienteRepository } from '../../repositories/ClienteRepository';
+import { ClienteService } from '../ClienteService';
+import { IClienteService } from '../interfaces';
 
-export const createCategoriaFinanceiraService = (): ICategoriaFinanceiraService => {
-  const repository = new CategoriaFinanceiraRepository();
-  return new CategoriaFinanceiraService(repository);
+export const createClienteService = (): IClienteService => {
+  const repository = new ClienteRepository();
+  return new ClienteService(repository);
 };

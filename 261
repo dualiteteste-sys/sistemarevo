@@ -1,53 +1,22 @@
 import { BaseRepository } from './BaseRepository';
-import { DevolucaoVenda, DevolucaoVendaItem } from '../types';
-import { camelToSnake, snakeToCamel } from '../lib/utils';
+		import { Embalagem } from '../types';
 
-export class DevolucaoVendaRepository extends BaseRepository<DevolucaoVenda> {
-  constructor() {
-    super('devolucoes_venda');
-  }
+		export class EmbalagemRepository extends BaseRepository<Embalagem> {
+		  constructor() {
+		    super('embalagens');
+		  }
 
-  protected createEntity(data: any): DevolucaoVenda {
-    return data as DevolucaoVenda;
-  }
+		  protected createEntity(data: Omit<Embalagem, 'id' | 'createdAt' | 'updatedAt'>): Embalagem {
+		    return {
+		      ...data,
+		      id: '',
+		      createdAt: new Date(),
+		      updatedAt: new Date(),
+		    };
+		  }
 
-  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: DevolucaoVenda[]; count: number }> {
-    const selectString = `
-      id, numero, data_devolucao, valor_total_devolvido,
-      cliente:clientes!cliente_id ( id, nome ),
-      pedidoVenda:pedidos_venda!pedido_venda_id ( id, numero )
-    `;
-    return super.findAll(options, selectString);
-  }
-
-  async createWithItems(
-    devolucaoData: Omit<DevolucaoVenda, 'id' | 'createdAt' | 'updatedAt' | 'itens'>,
-    itensData: Omit<DevolucaoVendaItem, 'id' | 'createdAt' | 'updatedAt' | 'devolucaoVendaId'>[]
-  ): Promise<DevolucaoVenda> {
-    const devolucaoParaInserir = camelToSnake(devolucaoData);
-
-    const { data: newDevolucao, error: devolucaoError } = await this.supabase
-      .from(this.tableName)
-      .insert(devolucaoParaInserir)
-      .select()
-      .single();
-
-    this.handleError(devolucaoError, 'createWithItems (devolucao)');
-    if (!newDevolucao) throw new Error('Falha ao criar o cabeçalho da devolução.');
-
-    if (itensData && itensData.length > 0) {
-      const itensParaInserir = itensData.map(item => ({
-        ...camelToSnake(item),
-        devolucao_venda_id: newDevolucao.id,
-      }));
-
-      const { error: itensError } = await this.supabase
-        .from('devolucao_venda_itens')
-        .insert(itensParaInserir);
-
-      this.handleError(itensError, 'createWithItems (itens)');
-    }
-
-    return snakeToCamel(newDevolucao) as DevolucaoVenda;
-  }
-}
+		  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Embalagem[]; count: number }> {
+		    console.warn('[Modo de Construção] Chamada para EmbalagemRepository.findAll bloqueada.');
+		    return { data: [], count: 0 };
+		  }
+		}

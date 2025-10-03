@@ -1,26 +1,26 @@
 import { useCrud } from '../useCrud';
-import { Servico } from '../../types';
+import { Vendedor } from '../../types';
 
-export const useServicos = () => {
+export const useVendedores = () => {
   const { 
-    items: servicos, 
+    items: vendedores, 
     loading, 
     error, 
-    createItem: createServico, 
-    updateItem: updateServico, 
-    deleteItem: deleteServico,
+    createItem: createVendedor, 
+    updateItem: updateVendedor, 
+    deleteItem: deleteVendedor,
     currentPage,
     totalPages,
     goToPage
-  } = useCrud<Servico>({ entityName: 'servico' });
+  } = useCrud<Vendedor>({ entityName: 'vendedor' });
 
   return {
-    servicos,
+    vendedores,
     loading,
     error,
-    createServico,
-    updateServico,
-    deleteServico,
+    createVendedor,
+    updateVendedor,
+    deleteVendedor,
     currentPage,
     totalPages,
     goToPage

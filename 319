@@ -1,8 +1,8 @@
-import { ContratoRepository } from '../../repositories/ContratoRepository';
-import { ContratoService } from '../ContratoService';
-import { IContratoService } from '../interfaces';
+import { CrmRepository } from '../../repositories/CrmRepository';
+import { CrmService } from '../CrmService';
+import { ICrmService } from '../interfaces';
 
-export const createContratoService = (): IContratoService => {
-  const repository = new ContratoRepository();
-  return new ContratoService(repository);
+export const createCrmService = (): ICrmService => {
+  const repository = new CrmRepository();
+  return new CrmService(repository);
 };

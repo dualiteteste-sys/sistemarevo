@@ -1,174 +1,42 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import ReactECharts from 'echarts-for-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
+import { KPI } from '../../types';
 
-export const GraficoVendas: React.FC = () => {
-  const option = {
-    backgroundColor: 'transparent',
-    title: {
-      text: 'Vendas por Categoria',
-      textStyle: {
-        color: '#374151',
-        fontSize: 18,
-        fontWeight: 600
-      },
-      left: 'center',
-      top: 10
-    },
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      borderColor: 'rgba(255, 255, 255, 0.3)',
-      borderWidth: 1,
-      borderRadius: 12,
-      textStyle: {
-        color: '#374151'
-      },
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      top: 'center',
-      textStyle: {
-        color: '#6B7280',
-        fontSize: 12
-      }
-    },
-    series: [
-      {
-        name: 'Categorias',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['60%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 8,
-          borderColor: 'rgba(255, 255, 255, 0.8)',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 16,
-            fontWeight: 'bold',
-            color: '#374151'
-          },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.2)'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: [
-          { 
-            value: 1048, 
-            name: 'Produtos',
-            itemStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 1,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: '#3B82F6' },
-                  { offset: 1, color: '#1D4ED8' }
-                ]
-              }
-            }
-          },
-          { 
-            value: 735, 
-            name: 'Serviços',
-            itemStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 1,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: '#8B5CF6' },
-                  { offset: 1, color: '#7C3AED' }
-                ]
-              }
-            }
-          },
-          { 
-            value: 580, 
-            name: 'Consultoria',
-            itemStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 1,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: '#10B981' },
-                  { offset: 1, color: '#059669' }
-                ]
-              }
-            }
-          },
-          { 
-            value: 484, 
-            name: 'Suporte',
-            itemStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 1,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: '#F59E0B' },
-                  { offset: 1, color: '#D97706' }
-                ]
-              }
-            }
-          },
-          { 
-            value: 300, 
-            name: 'Outros',
-            itemStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 1,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: '#EF4444' },
-                  { offset: 1, color: '#DC2626' }
-                ]
-              }
-            }
-          }
-        ],
-        animationType: 'scale',
-        animationEasing: 'elasticOut',
-        animationDelay: (idx: number) => idx * 200
-      }
-    ]
-  };
+interface KPICardProps {
+  kpi: KPI;
+  index: number;
+}
+
+export const KPICard: React.FC<KPICardProps> = ({ kpi, index }) => {
+  const IconComponent = (Icons as any)[kpi.icon] || Icons.Activity;
+  const isPositive = kpi.trend > 0;
 
   return (
-    <GlassCard animate delay={0.3} className="h-96">
-      <ReactECharts
-        option={option}
-        style={{ height: '100%', width: '100%' }}
-        opts={{ renderer: 'canvas' }}
-      />
+    <GlassCard animate delay={index * 0.1} className="relative overflow-hidden">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-gray-600 text-sm font-medium mb-2">{kpi.title}</p>
+          <p className="text-3xl font-bold text-gray-800 mb-2">{kpi.value}</p>
+          
+          <div className={`flex items-center gap-1 text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            <span>{Math.abs(kpi.trend).toFixed(1)}%</span>
+            <span className="text-gray-500">vs mês anterior</span>
+          </div>
+        </div>
+        
+        <div className={`p-3 rounded-full bg-gradient-to-br ${
+          kpi.color.includes('green') ? 'from-green-100 to-green-200' :
+          kpi.color.includes('blue') ? 'from-blue-100 to-blue-200' :
+          kpi.color.includes('orange') ? 'from-orange-100 to-orange-200' :
+          'from-purple-100 to-purple-200'
+        }`}>
+          <IconComponent size={24} className={kpi.color} />
+        </div>
+      </div>
     </GlassCard>
   );
 };

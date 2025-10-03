@@ -1,129 +1,103 @@
-import React, { useState, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Filter, History } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { Header } from '../components/layout/Header';
-import { GlassCard } from '../components/ui/GlassCard';
-import { GlassButton } from '../components/ui/GlassButton';
-import { GlassInput } from '../components/ui/GlassInput';
-import { Pagination } from '../components/ui/Pagination';
-import { DataTable } from '../components/ui/DataTable';
-import { useEstoque } from '../hooks/data/useEstoque';
-import { ProdutoComEstoque } from '../types';
-import { HistoricoModal } from '../components/estoque/HistoricoModal';
+import { KPICard } from '../components/dashboard/KPICard';
+import { AtividadesRecentes } from '../components/dashboard/AtividadesRecentes';
+import { GraficoFaturamento } from '../components/dashboard/GraficoFaturamento';
+import { GraficoVendas } from '../components/dashboard/GraficoVendas';
+import { RankingCategorias } from '../components/dashboard/RankingCategorias';
+import { generateMockAtividades } from '../lib/mockData';
+import { useDashboard } from '../hooks/data/useDashboard';
+import { KPI } from '../types';
+import { Loader2 } from 'lucide-react';
 
-const EstoqueBar: React.FC<{ atual: number; minimo: number; maximo?: number }> = ({ atual, minimo, maximo }) => {
-  const upperLimit = maximo || minimo * 2 || 1;
-  const percentage = Math.min((atual / upperLimit) * 100, 100);
+const calculateTrend = (current: number, previous: number): number => {
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
+  return ((current - previous) / previous) * 100;
+};
 
-  let colorClass = 'bg-green-500';
-  if (atual <= minimo) {
-    colorClass = 'bg-red-500';
-  } else if (atual <= minimo * 1.2) {
-    colorClass = 'bg-yellow-500';
+export const Dashboard: React.FC = () => {
+  const { stats, faturamentoMensal, loading, error } = useDashboard();
+  const atividades = generateMockAtividades(); // Mantendo atividades recentes como mock por enquanto
+
+  const kpis: KPI[] = useMemo(() => {
+    if (!stats) return [];
+    
+    return [
+      {
+        title: 'Faturamento do Mês',
+        value: `R$ ${stats.faturamentoTotalMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        icon: 'DollarSign',
+        trend: calculateTrend(stats.faturamentoTotalMesAtual, stats.faturamentoTotalMesAnterior),
+        color: 'text-green-600',
+      },
+      {
+        title: 'Novos Clientes',
+        value: stats.novosClientesMesAtual.toString(),
+        icon: 'Users',
+        trend: calculateTrend(stats.novosClientesMesAtual, stats.novosClientesMesAnterior),
+        color: 'text-blue-600',
+      },
+      {
+        title: 'Pedidos Realizados',
+        value: stats.pedidosRealizadosMesAtual.toString(),
+        icon: 'ShoppingCart',
+        trend: calculateTrend(stats.pedidosRealizadosMesAtual, stats.pedidosRealizadosMesAnterior),
+        color: 'text-orange-600',
+      },
+      {
+        title: 'Taxa de Conversão',
+        value: `2.8%`, // Placeholder
+        icon: 'Target',
+        trend: 1.2, // Placeholder
+        color: 'text-purple-600',
+      },
+    ];
+  }, [stats]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <Loader2 className="animate-spin text-blue-500" size={48} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>;
   }
 
   return (
-    <div className="w-full bg-glass-200 rounded-full h-2.5">
-      <div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${percentage}%` }}></div>
-    </div>
-  );
-};
-
-const getStatus = (atual: number, minimo: number): { text: string; color: string } => {
-  if (atual <= 0) return { text: 'Esgotado', color: 'bg-red-100 text-red-700 border-red-200' };
-  if (atual <= minimo) return { text: 'Crítico', color: 'bg-red-100 text-red-700 border-red-200' };
-  if (atual <= minimo * 1.2) return { text: 'Atenção', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
-  return { text: 'OK', color: 'bg-green-100 text-green-700 border-green-200' };
-};
-
-export const ControleEstoque: React.FC = () => {
-  const { produtos, loading, error, currentPage, totalPages, goToPage } = useEstoque();
-  const [filtro, setFiltro] = useState('');
-  const [historyProductId, setHistoryProductId] = useState<string | null>(null);
-
-  const produtosFiltrados = produtos.filter(produto =>
-    produto.nome.toLowerCase().includes(filtro.toLowerCase()) ||
-    (produto.codigo && produto.codigo.toLowerCase().includes(filtro.toLowerCase()))
-  );
-
-  const columns = useMemo(() => [
-    { 
-      header: 'Produto', 
-      accessorKey: 'nome', 
-      cell: (item: ProdutoComEstoque) => (
-        <div className="flex items-center gap-3">
-          <img 
-            src={item.imagens?.[0]?.url || `https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/40x40/e2e8f0/64748b?text=${item.nome.charAt(0)}`} 
-            alt={item.nome} 
-            className="w-10 h-10 object-cover rounded-md bg-gray-200"
-          />
-          <div>
-            <p className="font-medium text-gray-800">{item.nome}</p>
-            <p className="text-sm text-gray-500">SKU: {item.codigo || 'N/A'}</p>
-          </div>
-        </div>
-      ) 
-    },
-    { header: 'Estoque Mínimo', accessorKey: 'estoqueMinimo', cell: (item: ProdutoComEstoque) => item.estoqueMinimo || 0, className: 'text-center' },
-    { 
-      header: 'Estoque Atual', 
-      accessorKey: 'estoqueAtual', 
-      cell: (item: ProdutoComEstoque) => (
-        <div>
-          <p className="font-semibold text-center mb-1">{item.estoqueAtual} <span className="text-xs text-gray-500">{item.unidade}</span></p>
-          <EstoqueBar atual={item.estoqueAtual} minimo={item.estoqueMinimo || 0} maximo={item.estoqueMaximo} />
-        </div>
-      ),
-      className: 'w-48'
-    },
-    { 
-      header: 'Status', 
-      accessorKey: 'status', 
-      cell: (item: ProdutoComEstoque) => {
-        if (!item.controlarEstoque) return <span className="glass-badge bg-gray-100 text-gray-600 border-gray-200">Não Controlado</span>;
-        const status = getStatus(item.estoqueAtual, item.estoqueMinimo || 0);
-        return <span className={`glass-badge ${status.color}`}>{status.text}</span>;
-      },
-      className: 'text-center' 
-    },
-  ], []);
-
-  return (
     <div>
-      <Header title="Controle de Estoque" subtitle="Monitore os níveis de estoque de seus produtos" />
-      <GlassCard className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-[250px]">
-            <GlassInput placeholder="Buscar por nome ou código..." value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full max-w-md" />
-            <GlassButton icon={Filter} variant="secondary">Filtros</GlassButton>
-          </div>
+      <Header 
+        title="Dashboard" 
+        subtitle="Visão geral do seu negócio em tempo real"
+      />
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {kpis.map((kpi, index) => (
+          <KPICard key={kpi.title} kpi={kpi} index={index} />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        <div className="lg:col-span-8">
+          <GraficoFaturamento data={faturamentoMensal} />
         </div>
-      </GlassCard>
-      <GlassCard>
-        <DataTable
-          data={produtosFiltrados}
-          columns={columns}
-          loading={loading && produtos.length === 0}
-          error={error}
-          entityName="Produto"
-          actions={(item) => (
-            <div className="flex items-center gap-2">
-              <GlassButton icon={History} variant="secondary" size="sm" onClick={() => setHistoryProductId(item.id)}>
-                Ver Histórico
-              </GlassButton>
-            </div>
-          )}
-        />
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={goToPage} />
-      </GlassCard>
-      <AnimatePresence>
-        {historyProductId && (
-          <HistoricoModal 
-            produtoId={historyProductId} 
-            onClose={() => setHistoryProductId(null)} 
-          />
-        )}
-      </AnimatePresence>
+        <div className="lg:col-span-4">
+          <AtividadesRecentes atividades={atividades} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-7">
+          <GraficoVendas />
+        </div>
+        <div className="lg:col-span-5">
+          <RankingCategorias />
+        </div>
+      </div>
     </div>
   );
 };

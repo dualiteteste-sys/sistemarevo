@@ -1,76 +1,45 @@
 import { BaseRepository } from './BaseRepository';
-import { OrdemCompra, OrdemCompraItem } from '../types';
-import { camelToSnake, snakeToCamel } from '../lib/utils';
+		import { OrdemServico, OrdemServicoItem, OrdemServicoAnexo, Vendedor } from '../types';
+		import { camelToSnake, snakeToCamel } from '../lib/utils';
 
-export class OrdemCompraRepository extends BaseRepository<OrdemCompra> {
-  constructor() {
-    super('ordens_compra');
-  }
+		export class OrdemServicoRepository extends BaseRepository<OrdemServico> {
+		  constructor() {
+		    super('ordens_servico');
+		  }
 
-  protected createEntity(data: any): OrdemCompra {
-    return data as OrdemCompra;
-  }
+		  protected createEntity(data: Omit<OrdemServico, 'id' | 'createdAt' | 'updatedAt'>): OrdemServico {
+		    return {
+		      ...data,
+		      id: '',
+		      createdAt: new Date(),
+		      updatedAt: new Date(),
+		      itens: [],
+		      anexos: [],
+		      totalServicos: 0,
+		      orcar: false,
+		      status: data.status || 'ABERTA',
+		      prioridade: data.prioridade || 'MEDIA',
+		      dataInicio: new Date(),
+		    };
+		  }
 
-  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: OrdemCompra[]; count: number }> {
-    const selectString = 'id, numero, data_compra, total_geral, status, fornecedor:clientes!fornecedor_id(id, nome)';
-    return super.findAll(options, selectString);
-  }
+		  async findAll(): Promise<OrdemServico[]> {
+		    console.warn('[Modo de Construção] Chamada para OrdemServicoRepository.findAll bloqueada.');
+		    return [];
+		  }
 
-  async createWithItems(
-    ordemData: Partial<Omit<OrdemCompra, 'id' | 'createdAt' | 'updatedAt'>>,
-    itensData: Omit<OrdemCompraItem, 'id' | 'createdAt' | 'updatedAt' | 'ordemCompraId'>[]
-  ): Promise<OrdemCompra> {
-    const ordemParaInserir = camelToSnake(ordemData);
+		  async findById(id: string): Promise<OrdemServico | null> {
+		    console.warn('[Modo de Construção] Chamada para OrdemServicoRepository.findById bloqueada.');
+		    return null;
+		  }
 
-    const { data: newOrdem, error: ordemError } = await this.supabase
-      .from(this.tableName)
-      .insert(ordemParaInserir)
-      .select()
-      .single();
+		  async create(data: Partial<Omit<OrdemServico, 'id' | 'createdAt' | 'updatedAt'>>): Promise<OrdemServico> {
+		    console.warn('[Modo de Construção] Chamada para OrdemServicoRepository.create bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
 
-    this.handleError(ordemError, 'createWithItems (ordem)');
-    if (!newOrdem) throw new Error('Falha ao criar o cabeçalho da ordem de compra.');
-
-    if (itensData && itensData.length > 0) {
-      const itensParaInserir = itensData.map(item => ({
-        ...camelToSnake(item),
-        ordem_compra_id: newOrdem.id,
-      }));
-
-      const { error: itensError } = await this.supabase
-        .from('ordem_compra_itens')
-        .insert(itensParaInserir);
-
-      this.handleError(itensError, 'createWithItems (itens)');
-    }
-
-    const createdOrdem = await this.findById(newOrdem.id);
-    if (!createdOrdem) throw new Error('Não foi possível recarregar a ordem de compra após a criação.');
-
-    return createdOrdem;
-  }
-
-  async findById(id: string): Promise<OrdemCompra | null> {
-    const { data: ordemData, error: ordemError } = await this.supabase
-      .from(this.tableName)
-      .select('*, fornecedor:clientes!fornecedor_id(id, nome)')
-      .eq('id', id)
-      .single();
-
-    if (ordemError && ordemError.code !== 'PGRST116') {
-      this.handleError(ordemError, 'findById (ordem)');
-    }
-    if (!ordemData) return null;
-
-    const ordem = snakeToCamel(ordemData) as OrdemCompra;
-
-    const { data: itensData, error: itensError } = await this.supabase
-      .from('ordem_compra_itens')
-      .select('*')
-      .eq('ordem_compra_id', id);
-    this.handleError(itensError, 'findById (itens)');
-    ordem.itens = snakeToCamel(itensData || []) as OrdemCompraItem[];
-    
-    return ordem;
-  }
-}
+		  async update(id: string, updates: Partial<OrdemServico>): Promise<OrdemServico> {
+		    console.warn('[Modo de Construção] Chamada para OrdemServicoRepository.update bloqueada.');
+		    throw new Error("Funcionalidade desativada durante a reconstrução.");
+		  }
+		}

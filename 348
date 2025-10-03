@@ -1,17 +1,17 @@
 import { IEntity } from './base';
+import { Produto } from './produto';
 
-export enum TipoEmbalagem {
-  ENVELOPE = 'ENVELOPE',
-  CAIXA = 'CAIXA',
-  CILINDRO = 'CILINDRO',
+export interface EstoqueMovimento extends IEntity {
+  produtoId: string;
+  tipo: 'ENTRADA' | 'SAIDA';
+  quantidade: number;
+  data: Date;
+  origem?: string;
+  observacao?: string;
 }
 
-export interface Embalagem extends IEntity {
-  descricao: string;
-  tipo: TipoEmbalagem;
-  larguraCm?: number;
-  alturaCm?: number;
-  comprimentoCm?: number;
-  diametroCm?: number;
-  pesoKg: number;
+export interface ProdutoComEstoque extends Pick<Produto, 
+  'id' | 'nome' | 'codigo' | 'controlarEstoque' | 'estoqueMinimo' | 'estoqueMaximo' | 'unidade' | 'situacao' | 'imagens'
+> {
+  estoqueAtual: number;
 }

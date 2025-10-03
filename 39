@@ -1,59 +1,51 @@
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
-import { GripVertical, DollarSign, User } from 'lucide-react';
-import { CrmOportunidade } from '../../types';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { KanbanCard } from './KanbanCard';
+import { CrmOportunidade, CrmEtapa } from '../../types';
+import { GlassCard } from '../ui/GlassCard';
 
-interface KanbanCardProps {
-  oportunidade: CrmOportunidade;
-  onEdit: () => void;
+interface KanbanColumnProps {
+  etapa: CrmEtapa;
+  title: string;
+  oportunidades: CrmOportunidade[];
+  onEdit: (oportunidade: CrmOportunidade) => void;
 }
 
-export const KanbanCard: React.FC<KanbanCardProps> = ({ oportunidade, onEdit }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: oportunidade.id });
+export const KanbanColumn: React.FC<KanbanColumnProps> = ({ etapa, title, oportunidades, onEdit }) => {
+  const { setNodeRef, isOver } = useDroppable({ id: etapa });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 1,
-    boxShadow: isDragging ? '0 10px 20px rgba(0,0,0,0.1)' : 'none',
+  const etapaColors = {
+    [CrmEtapa.LEAD]: 'border-t-gray-400',
+    [CrmEtapa.PROSPECCAO]: 'border-t-blue-500',
+    [CrmEtapa.NEGOCIACAO]: 'border-t-yellow-500',
+    [CrmEtapa.GANHO]: 'border-t-green-500',
+    [CrmEtapa.PERDIDO]: 'border-t-red-500',
   };
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  const totalValor = oportunidades.reduce((sum, op) => sum + (op.valorEstimado || 0), 0);
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      className="p-4 rounded-xl bg-glass-50 backdrop-blur-sm border border-white/20 touch-none cursor-pointer"
-      whileHover={{ scale: 1.03 }}
-      onClick={onEdit}
-    >
-      <div className="flex items-start justify-between">
-        <h4 className="font-semibold text-gray-800 mb-2 pr-4 flex-1">{oportunidade.nome}</h4>
-        <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600 pt-1">
-          <GripVertical size={18} />
-        </div>
+    <GlassCard className={`flex flex-col border-t-4 ${etapaColors[etapa]} transition-colors duration-300 ${isOver ? 'bg-glass-200' : ''}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <span className="text-sm font-medium text-gray-500 bg-glass-200 rounded-full px-2 py-1">
+          {oportunidades.length}
+        </span>
       </div>
-      
-      <div className="text-xs text-gray-500 space-y-2 pt-3 border-t border-white/20">
-        <div className="flex items-center gap-2">
-          <User size={14} />
-          <span>{oportunidade.cliente?.nome || 'Cliente não associado'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <DollarSign size={14} />
-          <span>{formatCurrency(oportunidade.valorEstimado || 0)}</span>
-        </div>
+      <p className="text-xs text-gray-600 mb-4 -mt-2">
+        Total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor)}
+      </p>
+      <div
+        ref={setNodeRef}
+        className="flex-1 space-y-4 overflow-y-auto min-h-[300px] p-1 -m-1"
+      >
+        <SortableContext items={oportunidades.map(op => op.id)} strategy={verticalListSortingStrategy}>
+          {oportunidades.map(op => (
+            <KanbanCard key={op.id} oportunidade={op} onEdit={() => onEdit(op)} />
+          ))}
+        </SortableContext>
       </div>
-    </motion.div>
+    </GlassCard>
   );
 };

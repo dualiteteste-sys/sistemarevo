@@ -1,23 +1,16 @@
-import { supabase } from '../lib/supabaseClient';
-import { DREMensal } from '../types';
-import { snakeToCamel } from '../lib/utils';
+export class RepositoryError extends Error {
+  public context?: string;
+  public details?: any;
 
-export class RelatorioRepository {
-  protected supabase = supabase;
+  constructor(message: string, context?: string, details?: any) {
+    super(message);
+    this.name = 'RepositoryError';
+    this.context = context;
+    this.details = details;
 
-  async getDREMensal(): Promise<DREMensal[]> {
-    const { data, error } = await this.supabase
-      .from('dre_mensal')
-      .select('*')
-      .order('ano', { ascending: true })
-      .order('mes', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching DRE Mensal:', error);
-      throw new Error(error.message);
+    // Mantém o stack trace correto para erros customizados
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, RepositoryError);
     }
-    
-    if (!data) return [];
-    return snakeToCamel(data) as DREMensal[];
   }
 }

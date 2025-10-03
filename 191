@@ -1,24 +1,26 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-/**
- * Um hook genérico para gerenciar o estado de formulários.
- * @param getInitialData Uma função que retorna o estado inicial do formulário.
- */
-export const useFormState = <T extends object>(getInitialData: () => Partial<T>) => {
-  const [formData, setFormData] = useState<Partial<T>>(getInitialData);
+function getStorageValue<T>(key: string, defaultValue: T): T {
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error("Failed to parse localStorage value", e);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+}
 
-  // Redefine o estado do formulário se a função de dados iniciais mudar (ex: ao editar um item diferente)
+export const useLocalStorage = <T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
+  const [value, setValue] = useState<T>(() => {
+    return getStorageValue(key, defaultValue);
+  });
+
   useEffect(() => {
-    setFormData(getInitialData());
-  }, [getInitialData]);
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
 
-  const handleChange = useCallback((field: keyof T, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
-
-  return {
-    formData,
-    setFormData,
-    handleChange,
-  };
+  return [value, setValue];
 };

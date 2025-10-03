@@ -1,48 +1,44 @@
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, Filter } from 'lucide-react';
-import { Header } from '../components/layout/Header';
-import { GlassCard } from '../components/ui/GlassCard';
-import { GlassButton } from '../components/ui/GlassButton';
-import { GlassInput } from '../components/ui/GlassInput';
-import { VendedorForm } from '../components/vendedores/VendedorForm';
-import { Pagination } from '../components/ui/Pagination';
-import { DataTable } from '../components/ui/DataTable';
-import { useModalForm } from '../hooks/useModalForm';
-import { Vendedor, SituacaoVendedor } from '../types';
-import { useVendedores } from '../hooks/data/useVendedores';
-import { VendedorFormData } from '../schemas/vendedorSchema';
+import { Plus, Edit2, Trash2, Filter, TrendingUp, TrendingDown } from 'lucide-react';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { GlassButton } from '../../components/ui/GlassButton';
+import { GlassInput } from '../../components/ui/GlassInput';
+import { Pagination } from '../../components/ui/Pagination';
+import { DataTable } from '../../components/ui/DataTable';
+import { useModalForm } from '../../hooks/useModalForm';
+import { CategoriaFinanceira, TipoCategoriaFinanceira } from '../../types';
+import { useCrud } from '../../hooks/useCrud';
+import { CategoriaFinanceiraForm } from '../../components/settings/categorias/CategoriaFinanceiraForm';
 
-export const Vendedores: React.FC = () => {
+export const CategoriasFinanceiras: React.FC = () => {
   const { 
-    vendedores, 
+    items: categorias, 
     loading, 
     error, 
-    createVendedor, 
-    updateVendedor, 
-    deleteVendedor,
+    createItem: createCategoria, 
+    updateItem: updateCategoria, 
+    deleteItem: deleteCategoria,
     currentPage,
     totalPages,
     goToPage
-  } = useVendedores();
-  
-  const { isFormOpen, editingItem, handleOpenCreateForm, handleOpenEditForm, handleCloseForm } = useModalForm<Vendedor>();
+  } = useCrud<CategoriaFinanceira>({ entityName: 'categoriaFinanceira', initialPageSize: 20 });
+
+  const { isFormOpen, editingItem, handleOpenCreateForm, handleOpenEditForm, handleCloseForm } = useModalForm<CategoriaFinanceira>();
   const [isSaving, setIsSaving] = useState(false);
   const [filtro, setFiltro] = useState('');
 
-  const vendedoresFiltrados = vendedores.filter(vendedor =>
-    vendedor.nome.toLowerCase().includes(filtro.toLowerCase()) ||
-    (vendedor.email && vendedor.email.toLowerCase().includes(filtro.toLowerCase())) ||
-    (vendedor.cpfCnpj && vendedor.cpfCnpj.includes(filtro))
+  const categoriasFiltradas = categorias.filter(cat =>
+    cat.descricao.toLowerCase().includes(filtro.toLowerCase())
   );
 
-  const handleSave = async (vendedorData: VendedorFormData) => {
+  const handleSave = async (data: Partial<CategoriaFinanceira>) => {
     setIsSaving(true);
     try {
       if (editingItem) {
-        await updateVendedor(editingItem.id, vendedorData);
+        await updateCategoria(editingItem.id, data);
       } else {
-        await createVendedor(vendedorData as Omit<Vendedor, 'id' | 'createdAt' | 'updatedAt'>);
+        await createCategoria(data as any);
       }
       handleCloseForm();
     } finally {
@@ -51,48 +47,40 @@ export const Vendedores: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este vendedor?')) {
-      await deleteVendedor(id);
+    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
+      await deleteCategoria(id);
     }
   };
 
-  const getStatusBadge = (status: SituacaoVendedor) => {
-    const colors = {
-      [SituacaoVendedor.ATIVO_COM_ACESSO]: 'bg-green-100 text-green-700 border-green-200',
-      [SituacaoVendedor.ATIVO_SEM_ACESSO]: 'bg-blue-100 text-blue-700 border-blue-200',
-      [SituacaoVendedor.INATIVO]: 'bg-red-100 text-red-700 border-red-200'
-    };
-    return <span className={`glass-badge ${colors[status]}`}>{status}</span>;
-  };
-
   const columns = useMemo(() => [
-    { header: 'Nome', accessorKey: 'nome', cell: (item: Vendedor) => <p className="font-medium text-gray-800">{item.nome}</p> },
-    { header: 'CPF/CNPJ', accessorKey: 'cpfCnpj' },
-    { header: 'Email', accessorKey: 'email' },
-    { header: 'Situação', accessorKey: 'situacao', cell: (item: Vendedor) => getStatusBadge(item.situacao), className: 'text-center' },
+    { header: 'Descrição', accessorKey: 'descricao', cell: (item: CategoriaFinanceira) => <p className="font-medium text-gray-800">{item.descricao}</p> },
+    { header: 'Tipo', accessorKey: 'tipo', cell: (item: CategoriaFinanceira) => (
+      <span className={`flex items-center gap-2 ${item.tipo === 'RECEITA' ? 'text-green-600' : 'text-red-600'}`}>
+        {item.tipo === 'RECEITA' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+        {item.tipo}
+      </span>
+    )},
   ], []);
 
   return (
-    <div>
-      <Header title="Vendedores" subtitle="Gerencie sua equipe de vendas" />
-
+    <>
       <GlassCard className="mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-[250px]">
-            <GlassInput placeholder="Buscar por nome, email ou CPF/CNPJ..." value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full max-w-md" />
+            <GlassInput placeholder="Buscar por descrição..." value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full max-w-md" />
             <GlassButton icon={Filter} variant="secondary">Filtros</GlassButton>
           </div>
-          <GlassButton icon={Plus} onClick={handleOpenCreateForm}>Novo Vendedor</GlassButton>
+          <GlassButton icon={Plus} onClick={handleOpenCreateForm}>Nova Categoria</GlassButton>
         </div>
       </GlassCard>
 
       <GlassCard>
         <DataTable
-          data={vendedoresFiltrados}
+          data={categoriasFiltradas}
           columns={columns}
-          loading={loading && vendedores.length === 0}
+          loading={loading && categorias.length === 0}
           error={error}
-          entityName="Vendedor"
+          entityName="Categoria Financeira"
           actions={(item) => (
             <div className="flex items-center gap-2">
               <GlassButton icon={Edit2} variant="secondary" size="sm" onClick={() => handleOpenEditForm(item)} />
@@ -105,14 +93,16 @@ export const Vendedores: React.FC = () => {
 
       <AnimatePresence>
         {isFormOpen && (
-          <VendedorForm
-            vendedor={editingItem}
+          <CategoriaFinanceiraForm
+            categoria={editingItem}
             onSave={handleSave}
             onCancel={handleCloseForm}
             loading={isSaving}
           />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
+
+export default CategoriasFinanceiras;

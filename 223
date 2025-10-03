@@ -1,136 +1,100 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, Loader2, Eye } from 'lucide-react';
-import { Header } from '../components/layout/Header';
-import { GlassCard } from '../components/ui/GlassCard';
-import { GlassButton } from '../components/ui/GlassButton';
-import { GlassInput } from '../components/ui/GlassInput';
-import { Pagination } from '../components/ui/Pagination';
-import { useFaturaVenda } from '../hooks/data/useFaturaVenda';
-import { StatusFatura } from '../types';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { supabase } from '../lib/supabaseClient';
+import toast from 'react-hot-toast';
+import { LogIn, Loader2, Mail, KeyRound } from 'lucide-react';
+import { Logo } from '../components/ui/Logo';
 
-export const FaturaVendas: React.FC = () => {
-  const { faturas, loading, error, currentPage, totalPages, goToPage } = useFaturaVenda();
-  const [filtro, setFiltro] = useState('');
+export const Login: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const faturasFiltradas = faturas.filter(fatura =>
-    fatura.numeroFatura.toLowerCase().includes(filtro.toLowerCase()) ||
-    (fatura.pedido?.cliente?.nome && fatura.pedido.cliente.nome.toLowerCase().includes(filtro.toLowerCase()))
-  );
-  
-  const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  const formatDate = (date: Date) => new Date(date).toLocaleDateString('pt-BR');
-
-  const getStatusBadge = (status: StatusFatura) => {
-    const colors = {
-      [StatusFatura.EMITIDA]: 'bg-blue-100 text-blue-700 border-blue-200',
-      [StatusFatura.PAGA]: 'bg-green-100 text-green-700 border-green-200',
-      [StatusFatura.VENCIDA]: 'bg-orange-100 text-orange-700 border-orange-200',
-      [StatusFatura.CANCELADA]: 'bg-red-100 text-red-700 border-red-200'
-    };
-    return <span className={`glass-badge ${colors[status]}`}>{status}</span>;
-  };
-
-  const renderContent = () => {
-    if (loading && faturas.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center text-center py-10 space-y-4">
-          <Loader2 className="animate-spin text-blue-500" size={40} />
-          <p className="text-gray-600 font-medium">Carregando faturas...</p>
-        </div>
-      );
-    }
-
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      return (
-        <div className="text-center py-10 text-red-500">
-          <p className="font-semibold">Ocorreu um erro.</p>
-          <p className="text-sm mt-2">{error}</p>
-        </div>
-      );
+      toast.error(error.message || 'Falha no login. Verifique suas credenciais.');
+    } else {
+      toast.success('Login realizado com sucesso!');
+      navigate('/dashboard');
     }
-
-    if (faturasFiltradas.length === 0) {
-      return (
-        <div className="text-center py-10 text-gray-500">
-          <p>Nenhuma fatura encontrada.</p>
-          <p className="text-sm">Fature um pedido de venda para que ele apareça aqui.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/20">
-              <th className="text-left py-4 px-2 font-medium text-gray-700">Fatura</th>
-              <th className="text-left py-4 px-2 font-medium text-gray-700">Cliente</th>
-              <th className="text-left py-4 px-2 font-medium text-gray-700">Emissão</th>
-              <th className="text-left py-4 px-2 font-medium text-gray-700">Vencimento</th>
-              <th className="text-left py-4 px-2 font-medium text-gray-700">Valor</th>
-              <th className="text-center py-4 px-2 font-medium text-gray-700">Status</th>
-              <th className="text-left py-4 px-2 font-medium text-gray-700">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence>
-              {faturasFiltradas.map((fatura, index) => (
-                <motion.tr
-                  key={fatura.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border-b border-white/10 hover:bg-glass-50 hover:backdrop-blur-sm transition-all duration-200"
-                >
-                  <td className="py-4 px-2 font-medium text-gray-800">{fatura.numeroFatura}</td>
-                  <td className="py-4 px-2 text-gray-700">{fatura.pedido?.cliente?.nome}</td>
-                  <td className="py-4 px-2 text-gray-700">{formatDate(fatura.dataEmissao)}</td>
-                  <td className="py-4 px-2 text-gray-700">{formatDate(fatura.dataVencimento)}</td>
-                  <td className="py-4 px-2 text-gray-700">{formatCurrency(fatura.valorTotal)}</td>
-                  <td className="py-4 px-2 text-center">{getStatusBadge(fatura.status)}</td>
-                  <td className="py-4 px-2">
-                    <GlassButton icon={Eye} variant="secondary" size="sm" onClick={() => { /* Implementar visualização */ }} />
-                  </td>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </tbody>
-        </table>
-      </div>
-    );
+    setLoading(false);
   };
 
   return (
-    <div>
-      <Header 
-        title="Faturas de Venda" 
-        subtitle="Gerencie suas faturas emitidas"
-      />
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F7FE] p-4 relative overflow-hidden">
+      <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-200/50 rounded-full filter blur-3xl opacity-50 animate-pulse"></div>
+      <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-purple-200/50 rounded-full filter blur-3xl opacity-50 animate-pulse animation-delay-4000"></div>
 
-      <GlassCard className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-[250px]">
-            <GlassInput
-              placeholder="Buscar por fatura ou cliente..."
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
-              className="w-full max-w-md"
-            />
-            <GlassButton icon={Filter} variant="secondary">Filtros</GlassButton>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md z-10"
+      >
+        <div className="bg-white/70 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl shadow-blue-500/10 p-8">
+          <div className="flex justify-center mb-6">
+            <Logo />
           </div>
-        </div>
-      </GlassCard>
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">Bem-vindo de volta!</h2>
+          <p className="text-center text-gray-600 mb-8">Faça login para acessar seu painel.</p>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full pl-12 pr-4 py-3 bg-gray-100/50 border-2 border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-300 transition-all"
+              />
+            </div>
+            <div className="relative">
+              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="password"
+                placeholder="Sua senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-12 pr-4 py-3 bg-gray-100/50 border-2 border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-300 transition-all"
+              />
+            </div>
 
-      <GlassCard>
-        {renderContent()}
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={goToPage}
-        />
-      </GlassCard>
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
+                <input type="checkbox" className="form-checkbox" />
+                Lembrar-me
+              </label>
+              <a href="#" className="font-medium text-blue-600 hover:underline">Esqueci minha senha</a>
+            </div>
+
+            <motion.button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 1 }}
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <LogIn />}
+              <span>{loading ? 'Entrando...' : 'Entrar'}</span>
+            </motion.button>
+          </form>
+
+          <p className="text-center text-sm text-gray-600 mt-8">
+            Não tem uma conta?{' '}
+            <Link to="/signup" className="font-bold text-blue-600 hover:underline">
+              Crie uma agora
+            </Link>
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 };

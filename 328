@@ -1,8 +1,10 @@
-import { FormaPagamentoRepository } from '../../repositories/FormaPagamentoRepository';
-import { FormaPagamentoService } from '../FormaPagamentoService';
-import { IFormaPagamentoService } from '../interfaces';
+import { NotaEntradaRepository } from '../../repositories/NotaEntradaRepository';
+import { NotaEntradaService } from '../NotaEntradaService';
+import { INotaEntradaService } from '../interfaces';
+import { createEstoqueService } from './estoqueServiceFactory';
 
-export const createFormaPagamentoService = (): IFormaPagamentoService => {
-  const repository = new FormaPagamentoRepository();
-  return new FormaPagamentoService(repository);
+export const createNotaEntradaService = (): INotaEntradaService => {
+  const repository = new NotaEntradaRepository();
+  const estoqueService = createEstoqueService();
+  return new NotaEntradaService(repository, estoqueService);
 };

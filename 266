@@ -1,22 +1,24 @@
 import { BaseRepository } from './BaseRepository';
-import { FluxoCaixa } from '../types';
+		import { FormaPagamento } from '../types';
+		import { IFormaPagamentoRepository } from './interfaces';
 
-export class FluxoCaixaRepository extends BaseRepository<FluxoCaixa> {
-  constructor() {
-    super('fluxo_caixa');
-  }
+		export class FormaPagamentoRepository extends BaseRepository<FormaPagamento> implements IFormaPagamentoRepository {
+		  constructor() {
+		    super('formas_pagamento');
+		  }
 
-  protected createEntity(data: any): FluxoCaixa {
-    return data as FluxoCaixa;
-  }
+		  protected createEntity(data: Omit<FormaPagamento, 'id' | 'createdAt' | 'updatedAt'>): FormaPagamento {
+		    return {
+		      ...data,
+		      id: '',
+      ativo: true,
+		      createdAt: new Date(),
+		      updatedAt: new Date(),
+		    };
+		  }
 
-  async findAll(): Promise<FluxoCaixa[]> {
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select('id, data, descricao, valor, tipo')
-      .order('data', { ascending: false });
-      
-    this.handleError(error, 'findAll');
-    return (data as FluxoCaixa[]) || [];
-  }
-}
+		  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: FormaPagamento[]; count: number }> {
+		    console.warn('[Modo de Construção] Chamada para FormaPagamentoRepository.findAll bloqueada.');
+		    return { data: [], count: 0 };
+		  }
+		}

@@ -1,63 +1,77 @@
 import { useState, useCallback, useEffect } from 'react';
-import { OrdemCompra, OrdemCompraItem } from '../../types';
+import { PedidoVenda, PedidoVendaItem } from '../../types';
 import { useService } from '../useService';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
 
-export const useOrdemCompra = () => {
-  const [ordensCompra, setOrdensCompra] = useState<OrdemCompra[]>([]);
+export const usePedidoVenda = () => {
+  const [pedidosVenda, setPedidosVenda] = useState<PedidoVenda[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   
-  const service = useService('ordemCompra');
+  const pedidoVendaService = useService('pedidoVenda');
+  const faturaVendaService = useService('faturaVenda');
 
   const totalPages = Math.ceil(totalItems / PAGE_SIZE);
 
-  const loadOrdensCompra = useCallback(async (page: number) => {
+  const loadPedidosVenda = useCallback(async (page: number) => {
     try {
       setLoading(true);
       setError(null);
-      const { data, count } = await service.getAll({ page, pageSize: PAGE_SIZE });
-      setOrdensCompra(data);
+      const { data, count } = await pedidoVendaService.getAllPedidosVenda({ page, pageSize: PAGE_SIZE });
+      setPedidosVenda(data);
       setTotalItems(count);
       setCurrentPage(page);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar ordens de compra';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar pedidos de venda';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [service]);
+  }, [pedidoVendaService]);
 
-  const createOrdemCompra = async (
-    ordemData: Partial<Omit<OrdemCompra, 'id' | 'createdAt' | 'updatedAt'>>,
-    itensData: Omit<OrdemCompraItem, 'id' | 'createdAt' | 'updatedAt' | 'ordemCompraId'>[]
+  const createPedidoVenda = async (
+    pedidoData: Partial<Omit<PedidoVenda, 'id' | 'createdAt' | 'updatedAt'>>,
+    itensData: Omit<PedidoVendaItem, 'id' | 'createdAt' | 'updatedAt' | 'pedidoId'>[]
   ) => {
-    const promise = service.createWithItems(ordemData, itensData);
+    const promise = pedidoVendaService.createPedidoVenda(pedidoData, itensData);
     toast.promise(promise, {
-      loading: 'Criando ordem de compra...',
+      loading: 'Criando pedido de venda...',
       success: () => {
-        loadOrdensCompra(1);
-        return 'Ordem de compra criada com sucesso!';
+        loadPedidosVenda(1);
+        return 'Pedido de venda criado com sucesso!';
       },
-      error: (err) => `Falha ao criar ordem: ${err.message}`,
+      error: (err) => `Falha ao criar pedido: ${err.message}`,
     });
     return promise;
   };
   
+  const faturarPedido = async (pedidoId: string) => {
+    const promise = faturaVendaService.faturarPedido(pedidoId);
+    toast.promise(promise, {
+        loading: 'Faturando pedido...',
+        success: () => {
+            loadPedidosVenda(currentPage);
+            return 'Pedido faturado com sucesso!';
+        },
+        error: (err) => `Falha ao faturar: ${err.message}`,
+    });
+    await promise;
+  };
+
   useEffect(() => {
-    loadOrdensCompra(1);
-  }, [loadOrdensCompra]);
+    loadPedidosVenda(1);
+  }, [loadPedidosVenda]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages && page !== currentPage) {
-      loadOrdensCompra(page);
+      loadPedidosVenda(page);
     }
   };
 
-  return { ordensCompra, loading, error, createOrdemCompra, loadOrdensCompra, currentPage, totalPages, goToPage };
+  return { pedidosVenda, loading, error, createPedidoVenda, faturarPedido, loadPedidosVenda, currentPage, totalPages, goToPage };
 };

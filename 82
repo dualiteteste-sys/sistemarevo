@@ -1,83 +1,77 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { usePdv } from '../../contexts/PdvContext';
-import { GlassCard } from '../ui/GlassCard';
+import { PdvHeader } from './PdvHeader';
+import { PdvCart } from './PdvCart';
+import { PdvSidePanel } from './PdvSidePanel';
+import { PdvFooter } from './PdvFooter';
+import { usePdvShortcuts } from '../../hooks/usePdvShortcuts';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
-import { ClienteService } from '../../services/ClienteService';
-import { VendedorService } from '../../services/VendedorService';
-import { Cliente, Vendedor } from '../../types';
+import { Produto } from '../../types';
+import { useService } from '../../hooks/useService';
 
-interface PdvSidePanelProps {
-  clienteInputRef: React.RefObject<HTMLDivElement>;
-  vendedorInputRef: React.RefObject<HTMLDivElement>;
-}
+export const TelaVenda: React.FC = () => {
+  const { addToCart, finalizarVenda, salvarParaDepois, cancelarVenda } = usePdv();
+  const produtoService = useService('produto');
+  const clienteInputRef = useRef<HTMLDivElement>(null);
+  const vendedorInputRef = useRef<HTMLDivElement>(null);
+  const produtoInputRef = useRef<HTMLInputElement>(null);
 
-export const PdvSidePanel: React.FC<PdvSidePanelProps> = ({ clienteInputRef, vendedorInputRef }) => {
-  const { selectedCliente, setSelectedCliente, selectedVendedor, setSelectedVendedor, observacao, setObservacao } = usePdv();
-  
-  const clienteService = useMemo(() => new ClienteService(), []);
-  const vendedorService = useMemo(() => new VendedorService(), []);
+  const fetchProdutos = async (query: string) => {
+    const results = await produtoService.search(query);
+    return results.map(p => ({
+      value: p.id,
+      label: `${p.nome} - ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.precoVenda)}`,
+      produto: p
+    }));
+  };
 
-  const fetchClientes = useCallback(async (query: string) => {
-    const results = await clienteService.search(query, 'cliente');
-    return results.map(c => ({ value: c.id, label: c.nome, cliente: c }));
-  }, [clienteService]);
-
-  const fetchVendedores = useCallback(async (query: string) => {
-    const results = await vendedorService.search(query);
-    return results.map(v => ({ value: v.id, label: v.nome, vendedor: v }));
-  }, [vendedorService]);
-
-  const handleClienteSelect = (clienteId: string | null, suggestions: any[]) => {
-    if (clienteId) {
-      const selected = suggestions.find(s => s.value === clienteId);
-      setSelectedCliente(selected?.cliente as Cliente || null);
-    } else {
-      setSelectedCliente(null);
+  const handleProdutoSelect = (produtoId: string | null, suggestions: any[]) => {
+    if (produtoId) {
+      const selected = suggestions.find(s => s.value === produtoId);
+      if (selected?.produto) {
+        addToCart(selected.produto as Produto, 1);
+      }
     }
   };
 
-  const handleVendedorSelect = (vendedorId: string | null, suggestions: any[]) => {
-    if (vendedorId) {
-      const selected = suggestions.find(s => s.value === vendedorId);
-      setSelectedVendedor(selected?.vendedor as Vendedor || null);
-    } else {
-      setSelectedVendedor(null);
-    }
-  };
+  usePdvShortcuts({
+    onAbrirCaixa: () => {},
+    onCancelarModal: () => {},
+    onContinuar: finalizarVenda,
+    onSalvarParaDepois: salvarParaDepois,
+    onCancelarVenda: cancelarVenda,
+    onFocusBuscaProduto: () => produtoInputRef.current?.focus(),
+    onFocusCliente: () => clienteInputRef.current?.querySelector('input')?.focus(),
+    onFocusVendedor: () => vendedorInputRef.current?.querySelector('input')?.focus(),
+    onMostrarAtalhos: () => alert('Atalhos: ...'),
+  }, [finalizarVenda, salvarParaDepois, cancelarVenda]);
 
   return (
-    <GlassCard className="h-full flex flex-col">
-      <div className="space-y-6">
-        <div ref={clienteInputRef}>
-          <AutocompleteInput
-            label="Cliente (F8)"
-            value={selectedCliente?.id || ''}
-            onValueChange={handleClienteSelect}
-            fetchSuggestions={fetchClientes}
-            initialLabel={selectedCliente?.nome || ''}
-            placeholder="Consumidor Final"
-          />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex flex-col flex-1 h-full"
+    >
+      <PdvHeader />
+      <div className="flex-1 grid grid-cols-12 gap-6 overflow-hidden">
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+          <div ref={produtoInputRef}>
+            <AutocompleteInput
+              value=""
+              onValueChange={handleProdutoSelect}
+              fetchSuggestions={fetchProdutos}
+              placeholder="Pesquise por descrição, código (SKU) ou GTIN"
+            />
+          </div>
+          <PdvCart />
         </div>
-        <div ref={vendedorInputRef}>
-          <AutocompleteInput
-            label="Vendedor (F9)"
-            value={selectedVendedor?.id || ''}
-            onValueChange={handleVendedorSelect}
-            fetchSuggestions={fetchVendedores}
-            initialLabel={selectedVendedor?.nome || ''}
-            placeholder="Sem vendedor"
-          />
-        </div>
-        <div>
-          <label className="text-sm text-gray-600 mb-1 block">Observação</label>
-          <textarea
-            value={observacao}
-            onChange={(e) => setObservacao(e.target.value)}
-            className="glass-input h-24 resize-y"
-            placeholder="Adicione uma observação à venda..."
-          />
+        <div className="col-span-12 lg:col-span-4">
+          <PdvSidePanel clienteInputRef={clienteInputRef} vendedorInputRef={vendedorInputRef} />
         </div>
       </div>
-    </GlassCard>
+      <PdvFooter />
+    </motion.div>
   );
 };

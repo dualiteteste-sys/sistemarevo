@@ -1,8 +1,8 @@
-import { FluxoCaixaRepository } from '../../repositories/FluxoCaixaRepository';
-import { FluxoCaixaService } from '../FluxoCaixaService';
-import { IFluxoCaixaService } from '../interfaces';
+import { FormaPagamentoRepository } from '../../repositories/FormaPagamentoRepository';
+import { FormaPagamentoService } from '../FormaPagamentoService';
+import { IFormaPagamentoService } from '../interfaces';
 
-export const createFluxoCaixaService = (): IFluxoCaixaService => {
-  const repository = new FluxoCaixaRepository();
-  return new FluxoCaixaService(repository);
+export const createFormaPagamentoService = (): IFormaPagamentoService => {
+  const repository = new FormaPagamentoRepository();
+  return new FormaPagamentoService(repository);
 };

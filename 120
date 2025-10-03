@@ -1,69 +1,53 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Save, X, Loader2 } from 'lucide-react';
-import { GlassButton } from './GlassButton';
+import { LucideIcon } from 'lucide-react';
 
-interface GenericFormProps {
-  title: string;
-  onSave: () => void;
-  onCancel: () => void;
-  children: React.ReactNode;
-  loading?: boolean;
-  size?: 'max-w-3xl' | 'max-w-4xl' | 'max-w-6xl' | 'max-w-7xl';
-}
+type GlassButtonProps = {
+  children?: React.ReactNode;
+  onClick?: () => void;
+  icon?: LucideIcon;
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+};
 
-export const GenericForm: React.FC<GenericFormProps> = ({ 
-  title, 
-  onSave, 
-  onCancel, 
-  children, 
-  loading = false,
-  size = 'max-w-4xl'
+export const GlassButton: React.FC<GlassButtonProps> = ({
+  children,
+  onClick,
+  icon: Icon,
+  variant = 'primary',
+  size = 'md',
+  className = '',
+  disabled = false,
+  type = 'button',
 }) => {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loading) {
-      onSave();
-    }
+  const sizeClasses = {
+    sm: 'px-2 py-2 text-sm',
+    md: 'px-4 py-3 text-base',
+    lg: 'px-6 py-4 text-lg'
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gray-500/40 backdrop-blur flex items-center justify-center z-50 p-8"
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className={`w-full ${size} h-auto max-h-[95vh] flex flex-col`}
-      >
-        <div className="flex justify-end h-14 items-center">
-          <GlassButton icon={X} variant="secondary" onClick={onCancel} />
-        </div>
-        
-        <div className="flex-1 flex flex-col bg-glass-100 rounded-2xl shadow-glass-lg overflow-hidden border border-white/20">
-          <div className="px-8 pt-6 pb-2">
-             <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-          </div>
-          <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-8 space-y-8">
-              {children}
-            </div>
+  const variantClasses = {
+    primary: 'text-blue-700 hover:text-blue-800',
+    secondary: 'text-gray-700 hover:text-gray-800',
+    danger: 'text-red-700 hover:text-red-800'
+  };
+  
+  const iconOnlyClasses = !children ? (size === 'sm' ? 'px-2' : 'px-3') : 'gap-2';
 
-            <div className="flex gap-4 p-8 border-t border-white/30 bg-glass-200">
-              <GlassButton type="submit" icon={loading ? Loader2 : Save} disabled={loading} className={loading ? 'animate-spin' : ''}>
-                {loading ? 'Salvando...' : 'Salvar'}
-              </GlassButton>
-              <GlassButton type="button" variant="secondary" onClick={onCancel} disabled={loading}>
-                Cancelar
-              </GlassButton>
-            </div>
-          </form>
-        </div>
-      </motion.div>
-    </motion.div>
+  return (
+    <motion.button
+      type={type}
+      className={`glass-button flex items-center justify-center font-medium ${sizeClasses[size]} ${variantClasses[variant]} ${iconOnlyClasses} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      onClick={onClick}
+      disabled={disabled}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+    >
+      {Icon && <Icon size={size === 'sm' ? 16 : size === 'md' ? 20 : 24} />}
+      {children}
+    </motion.button>
   );
 };

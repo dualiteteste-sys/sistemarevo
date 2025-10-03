@@ -1,8 +1,8 @@
-import { OrdemCompraRepository } from '../../repositories/OrdemCompraRepository';
-import { OrdemCompraService } from '../OrdemCompraService';
-import { IOrdemCompraService } from '../interfaces';
+import { OrdemServicoRepository } from '../../repositories/OrdemServicoRepository';
+import { OrdemServicoService } from '../OrdemServicoService';
+import { IOrdemServicoService } from '../interfaces';
 
-export const createOrdemCompraService = (): IOrdemCompraService => {
-  const repository = new OrdemCompraRepository();
-  return new OrdemCompraService(repository);
+export const createOrdemServicoService = (): IOrdemServicoService => {
+  const repository = new OrdemServicoRepository();
+  return new OrdemServicoService(repository);
 };

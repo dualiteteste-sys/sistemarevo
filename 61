@@ -1,74 +1,55 @@
-import React from 'react';
-import toast from 'react-hot-toast';
-import { GenericForm } from '../ui/GenericForm';
-import { OrdemCompra, OrdemCompraItem } from '../../types';
-import { useOrdemCompraForm } from '../../hooks/forms/useOrdemCompraForm';
-import { CabecalhoSection } from './form/CabecalhoSection';
-import { ItensSection } from './form/ItensSection';
-import { TotaisSection } from './form/TotaisSection';
-import { DetalhesPagamentoSection } from './form/DetalhesPagamentoSection';
-import { TransporteObservacoesSection } from './form/TransporteObservacoesSection';
+import React, { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AutocompleteInput } from '../../ui/AutocompleteInput';
+import { GlassInput } from '../../ui/GlassInput';
+import { InputWrapper } from '../../ui/InputWrapper';
+import { useService } from '../../../hooks/useService';
+import { OrdemCompra } from '../../../types';
 
-interface OrdemCompraFormProps {
-  ordem?: Partial<OrdemCompra>;
-  onSave: (
-    ordemData: Partial<Omit<OrdemCompra, 'id' | 'createdAt' | 'updatedAt'>>,
-    itensData: Omit<OrdemCompraItem, 'id' | 'createdAt' | 'updatedAt' | 'ordemCompraId'>[]
-  ) => Promise<void>;
-  onCancel: () => void;
-  loading?: boolean;
+interface CabecalhoSectionProps {
+  formData: Partial<OrdemCompra>;
+  handleChange: (field: keyof OrdemCompra, value: any) => void;
+  initialFornecedorLabel: string;
 }
 
-export const OrdemCompraForm: React.FC<OrdemCompraFormProps> = ({ ordem, onSave, onCancel, loading }) => {
-  const {
-    formData,
-    handleChange,
-    handleItemChange,
-    handleAddItem,
-    handleRemoveItem,
-    initialFornecedorLabel,
-  } = useOrdemCompraForm(ordem);
+export const CabecalhoSection: React.FC<CabecalhoSectionProps> = ({ formData, handleChange, initialFornecedorLabel }) => {
+  const [showFornecedor, setShowFornecedor] = useState(false);
+  const clienteService = useService('cliente');
 
-  const handleSave = async () => {
-    if (!formData.fornecedorId) {
-      toast.error('O fornecedor é obrigatório.');
-      return;
-    }
-    if ((formData.itens || []).length === 0) {
-      toast.error('Adicione pelo menos um item ao pedido.');
-      return;
-    }
-    
-    const { itens, id, createdAt, updatedAt, fornecedor, ...ordemData } = formData;
-    const itensData = (itens || []).map(({ id: itemId, ordemCompraId, createdAt: itemCreatedAt, updatedAt: itemUpdatedAt, ...rest }) => rest);
-    
-    await onSave(ordemData, itensData);
-  };
+  const fetchFornecedores = useCallback(async (query: string) => {
+    const results = await clienteService.search(query, 'fornecedor');
+    return results.map(f => ({ value: f.id, label: f.nome }));
+  }, [clienteService]);
 
   return (
-    <GenericForm
-      title={ordem?.id ? 'Editar Ordem de Compra' : 'Nova Ordem de Compra'}
-      onSave={handleSave}
-      onCancel={onCancel}
-      loading={loading}
-      size="max-w-7xl"
-    >
-      <div className="space-y-8">
-        <CabecalhoSection
-          formData={formData}
-          handleChange={handleChange}
-          initialFornecedorLabel={initialFornecedorLabel}
-        />
-        <ItensSection
-          itens={formData.itens || []}
-          handleItemChange={handleItemChange}
-          handleAddItem={handleAddItem}
-          handleRemoveItem={handleRemoveItem}
-        />
-        <TotaisSection formData={formData} handleChange={handleChange} />
-        <DetalhesPagamentoSection formData={formData} handleChange={handleChange} />
-        <TransporteObservacoesSection formData={formData} handleChange={handleChange} />
+    <section>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-white/30 pb-2">Cabeçalho</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <InputWrapper label="Fornecedor *" className="md:col-span-2">
+          <AutocompleteInput
+            value={formData.fornecedorId || ''}
+            onValueChange={(id) => handleChange('fornecedorId', id)}
+            fetchSuggestions={fetchFornecedores}
+            initialLabel={initialFornecedorLabel}
+            placeholder="Digite para buscar um fornecedor..."
+          />
+          <div className="text-xs mt-1 space-x-2">
+            <button type="button" onClick={() => setShowFornecedor(s => !s)} className="text-blue-600 hover:underline">dados do fornecedor</button>
+            <span className="text-gray-400">•</span>
+            <button type="button" className="text-blue-600 hover:underline">ver últimas compras</button>
+            <span className="text-gray-400">•</span>
+            <button type="button" className="text-blue-600 hover:underline">pessoas de contato</button>
+          </div>
+        </InputWrapper>
+        <InputWrapper label="Número"><GlassInput value={formData.numero} disabled /></InputWrapper>
       </div>
-    </GenericForm>
+      <AnimatePresence>
+        {showFornecedor && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 p-4 bg-glass-50 rounded-xl border border-white/20">
+            <p className="text-center text-gray-500">Seção de dados do fornecedor em desenvolvimento.</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 };

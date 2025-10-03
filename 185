@@ -1,50 +1,61 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { NotaEntrada, NotaEntradaItem, Produto, StatusNotaEntrada } from '../../types';
-import { useService } from '../useService';
+import { useState, useEffect, useCallback } from 'react';
+import { OrdemCompra, OrdemCompraItem, StatusOrdemCompra, FretePorConta } from '../../types';
+import { OrdemCompraService } from '../../services/OrdemCompraService';
 
-const getInitialData = (nota?: Partial<NotaEntrada>): Partial<NotaEntrada> => ({
-  id: nota?.id,
-  numero: nota?.numero || `NE-${Date.now().toString().slice(-6)}`,
-  fornecedorId: nota?.fornecedorId || '',
-  fornecedor: nota?.fornecedor,
-  dataEntrada: nota?.dataEntrada ? new Date(nota.dataEntrada) : new Date(),
-  valorTotal: nota?.valorTotal || 0,
-  observacoes: nota?.observacoes,
-  itens: nota?.itens?.map(item => ({ ...item, id: item.id || crypto.randomUUID() })) || [],
-  status: nota?.status || StatusNotaEntrada.EM_DIGITACAO,
+const getInitialData = (ordem?: Partial<OrdemCompra>): Partial<OrdemCompra> => ({
+  id: ordem?.id,
+  numero: ordem?.numero || `OC-${Date.now().toString().slice(-6)}`,
+  fornecedorId: ordem?.fornecedorId || '',
+  fornecedor: ordem?.fornecedor,
+  itens: ordem?.itens?.map(item => ({ ...item, id: item.id || crypto.randomUUID() })) || [],
+  totalProdutos: ordem?.totalProdutos || 0,
+  desconto: ordem?.desconto,
+  frete: ordem?.frete,
+  totalIpi: ordem?.totalIpi,
+  totalIcmsSt: ordem?.totalIcmsSt,
+  totalGeral: ordem?.totalGeral || 0,
+  numeroNoFornecedor: ordem?.numeroNoFornecedor,
+  dataCompra: ordem?.dataCompra ? new Date(ordem.dataCompra) : new Date(),
+  dataPrevista: ordem?.dataPrevista ? new Date(ordem.dataPrevista) : undefined,
+  condicaoPagamento: ordem?.condicaoPagamento,
+  categoriaId: ordem?.categoriaId,
+  transportadorNome: ordem?.transportadorNome,
+  fretePorConta: ordem?.fretePorConta || FretePorConta.CIF,
+  observacoes: ordem?.observacoes,
+  marcadores: ordem?.marcadores || [],
+  observacoesInternas: ordem?.observacoesInternas,
+  status: ordem?.status || StatusOrdemCompra.ABERTA,
 });
 
-export const useNotaEntradaForm = (nota?: Partial<NotaEntrada>) => {
-  const [formData, setFormData] = useState<Partial<NotaEntrada>>(getInitialData(nota));
+export const useOrdemCompraForm = (ordem?: Partial<OrdemCompra>) => {
+  const [formData, setFormData] = useState<Partial<OrdemCompra>>(getInitialData(ordem));
   const [initialFornecedorLabel, setInitialFornecedorLabel] = useState('');
 
-  const clienteService = useService('cliente');
-  const produtoService = useService('produto');
-
   useEffect(() => {
-    const initialData = getInitialData(nota);
+    const initialData = getInitialData(ordem);
     setFormData(initialData);
-    if (nota?.fornecedor) {
-      setInitialFornecedorLabel(nota.fornecedor.nome);
+    if (ordem?.fornecedor) {
+      setInitialFornecedorLabel(ordem.fornecedor.nome);
     } else {
       setInitialFornecedorLabel('');
     }
-  }, [nota]);
+  }, [ordem]);
 
-  const handleChange = useCallback((field: keyof NotaEntrada, value: any) => {
+  const handleChange = useCallback((field: keyof OrdemCompra, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleItemChange = useCallback((itemId: string, field: keyof NotaEntradaItem, value: any) => {
+  const handleItemChange = useCallback((itemId: string, field: keyof OrdemCompraItem, value: any) => {
     setFormData(prev => {
       if (!prev || !prev.itens) return prev;
       const newItens = prev.itens.map(item => {
         if (item.id === itemId) {
           const updatedItem = { ...item, [field]: value };
-          if (field === 'quantidade' || field === 'valorUnitario') {
+          if (field === 'quantidade' || field === 'precoUnitario' || field === 'ipi') {
             const qtd = field === 'quantidade' ? Number(value) : item.quantidade;
-            const preco = field === 'valorUnitario' ? Number(value) : item.valorUnitario;
-            updatedItem.valorTotal = qtd * preco;
+            const preco = field === 'precoUnitario' ? Number(value) : item.precoUnitario;
+            const ipi = field === 'ipi' ? Number(value) : (item.ipi || 0);
+            updatedItem.precoTotal = qtd * preco * (1 + ipi / 100);
           }
           return updatedItem;
         }
@@ -55,14 +66,13 @@ export const useNotaEntradaForm = (nota?: Partial<NotaEntrada>) => {
   }, []);
 
   const handleAddItem = useCallback(() => {
-    const newItem: NotaEntradaItem = {
+    const newItem: OrdemCompraItem = {
       id: crypto.randomUUID(),
-      notaEntradaId: formData.id || '',
-      produtoId: '',
+      ordemCompraId: formData.id || '',
       descricao: '',
       quantidade: 1,
-      valorUnitario: 0,
-      valorTotal: 0,
+      precoUnitario: 0,
+      precoTotal: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -73,41 +83,10 @@ export const useNotaEntradaForm = (nota?: Partial<NotaEntrada>) => {
     handleChange('itens', (formData.itens || []).filter(item => item.id !== itemId));
   }, [formData.itens, handleChange]);
 
-  const handleProdutoSelect = useCallback((itemId: string, produto: Produto) => {
-    setFormData(prev => {
-        if (!prev || !prev.itens) return prev;
-        const newItens = prev.itens.map(item => {
-            if (item.id === itemId) {
-              return {
-                ...item,
-                produtoId: produto.id,
-                descricao: produto.nome,
-                valorUnitario: produto.custo || 0,
-                valorTotal: item.quantidade * (produto.custo || 0),
-              };
-            }
-            return item;
-          });
-        return { ...prev, itens: newItens };
-    });
-  }, []);
-
-  const fetchFornecedores = useCallback(async (query: string) => {
-    const results = await clienteService.search(query, 'fornecedor');
-    return results.map(f => ({ value: f.id, label: f.nome }));
-  }, [clienteService]);
-
-  const fetchProdutos = useCallback(async (query: string) => {
-    const results = await produtoService.search(query);
-    return results.map(p => ({ value: p.id, label: p.nome, produto: p }));
-  }, [produtoService]);
-
   useEffect(() => {
-    const total = (formData.itens || []).reduce((acc, item) => acc + (item.valorTotal || 0), 0);
-    if (total !== formData.valorTotal) {
-      handleChange('valorTotal', total);
-    }
-  }, [formData.itens, formData.valorTotal, handleChange]);
+    const calculatedTotals = OrdemCompraService.calculateTotals(formData);
+    setFormData(prev => ({ ...prev, ...calculatedTotals }));
+  }, [formData.itens, formData.desconto, formData.frete, formData.totalIcmsSt]);
 
   return {
     formData,
@@ -115,9 +94,6 @@ export const useNotaEntradaForm = (nota?: Partial<NotaEntrada>) => {
     handleItemChange,
     handleAddItem,
     handleRemoveItem,
-    handleProdutoSelect,
     initialFornecedorLabel,
-    fetchFornecedores,
-    fetchProdutos,
   };
 };

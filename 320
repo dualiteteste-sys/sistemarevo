@@ -1,8 +1,8 @@
-import { CrmRepository } from '../../repositories/CrmRepository';
-import { CrmService } from '../CrmService';
-import { ICrmService } from '../interfaces';
+import { DashboardRepository } from '../../repositories/DashboardRepository';
+import { DashboardService } from '../DashboardService';
+import { IDashboardService } from '../interfaces';
 
-export const createCrmService = (): ICrmService => {
-  const repository = new CrmRepository();
-  return new CrmService(repository);
+export const createDashboardService = (): IDashboardService => {
+  const repository = new DashboardRepository();
+  return new DashboardService(repository);
 };

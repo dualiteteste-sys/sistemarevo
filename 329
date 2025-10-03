@@ -1,10 +1,8 @@
-import { NotaEntradaRepository } from '../../repositories/NotaEntradaRepository';
-import { NotaEntradaService } from '../NotaEntradaService';
-import { INotaEntradaService } from '../interfaces';
-import { createEstoqueService } from './estoqueServiceFactory';
+import { NotaFiscalRepository } from '../../repositories/NotaFiscalRepository';
+import { NotaFiscalService } from '../NotaFiscalService';
+import { INotaFiscalService } from '../interfaces';
 
-export const createNotaEntradaService = (): INotaEntradaService => {
-  const repository = new NotaEntradaRepository();
-  const estoqueService = createEstoqueService();
-  return new NotaEntradaService(repository, estoqueService);
+export const createNotaFiscalService = (): INotaFiscalService => {
+  const repository = new NotaFiscalRepository();
+  return new NotaFiscalService(repository);
 };

@@ -1,17 +1,23 @@
 import { IEntity } from './base';
-import { Produto } from './produto';
+import { PedidoVenda } from './pedidoVenda';
 
-export interface EstoqueMovimento extends IEntity {
-  produtoId: string;
-  tipo: 'ENTRADA' | 'SAIDA';
-  quantidade: number;
-  data: Date;
-  origem?: string;
-  observacao?: string;
+export enum StatusExpedicao {
+  AGUARDANDO_ENVIO = 'AGUARDANDO_ENVIO',
+  ENVIADO = 'ENVIADO',
+  ENTREGUE = 'ENTREGUE',
+  CANCELADO = 'CANCELADO',
 }
 
-export interface ProdutoComEstoque extends Pick<Produto, 
-  'id' | 'nome' | 'codigo' | 'controlarEstoque' | 'estoqueMinimo' | 'estoqueMaximo' | 'unidade' | 'situacao' | 'imagens'
-> {
-  estoqueAtual: number;
+export interface Expedicao extends IEntity {
+  lote: string;
+  formaEnvio: string;
+  status: StatusExpedicao;
+  dataCriacao: Date;
+  dataEnvio?: Date;
+}
+
+export interface ExpedicaoPedido extends IEntity {
+  expedicaoId: string;
+  pedidoVendaId: string;
+  pedidoVenda?: PedidoVenda;
 }

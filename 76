@@ -1,61 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Lock, Calendar, Clock } from 'lucide-react';
 import { GlassButton } from '../ui/GlassButton';
-import { CurrencyInput } from '../ui/CurrencyInput';
 
-interface AberturaCaixaModalProps {
-  onAbrirCaixa: (valor: number) => void;
-  onCancel: () => void;
+interface CaixaFechadoProps {
+  onAbrirCaixa: () => void;
 }
 
-export const AberturaCaixaModal: React.FC<AberturaCaixaModalProps> = ({ onAbrirCaixa, onCancel }) => {
-  const [valor, setValor] = useState(0);
+export const CaixaFechado: React.FC<CaixaFechadoProps> = ({ onAbrirCaixa }) => {
+  const [time, setTime] = useState(new Date());
 
-  const handleAbrir = () => {
-    onAbrirCaixa(valor);
-  };
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const formattedDate = time.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gray-500/40 backdrop-blur flex items-center justify-center z-50 p-4"
-      onClick={onCancel}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="flex flex-col items-center justify-center flex-1 text-center"
     >
-      <motion.div
-        initial={{ scale: 0.95, y: -20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.95, y: 20, opacity: 0 }}
-        className="bg-glass-100 rounded-2xl shadow-glass-lg border border-white/20 p-8 w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-800">Abertura de Caixa</h3>
-          <GlassButton icon={X} variant="secondary" size="sm" onClick={onCancel} />
+      <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+        <Lock size={48} className="text-red-500" />
+      </div>
+      <h2 className="text-3xl font-bold text-gray-800 mb-2">Caixa Fechado</h2>
+      <p className="text-gray-600 mb-8">Para iniciar as vendas, você precisa abrir o caixa.</p>
+      
+      <div className="flex items-center justify-center gap-6 mb-8 text-gray-500">
+        <div className="flex items-center gap-2">
+          <Calendar size={18} />
+          <span>{formattedDate}</span>
         </div>
+        <div className="flex items-center gap-2">
+          <Clock size={18} />
+          <span>{formattedTime}</span>
+        </div>
+      </div>
 
-        <div className="space-y-6">
-          <div>
-            <label className="text-sm text-gray-600 mb-1 block">Valor disponível em caixa</label>
-            <CurrencyInput value={valor} onAccept={(v) => setValor(parseFloat(v))} />
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="form-checkbox" />
-            <span className="text-sm text-gray-700">Imprimir comprovante de abertura de caixa</span>
-          </label>
-        </div>
-
-        <div className="flex gap-4 mt-8">
-          <GlassButton onClick={handleAbrir} className="flex-1">
-            Abrir Caixa (Ctrl + Enter)
-          </GlassButton>
-          <GlassButton variant="secondary" onClick={onCancel} className="flex-1">
-            Cancelar (Esc)
-          </GlassButton>
-        </div>
-      </motion.div>
+      <GlassButton size="lg" onClick={onAbrirCaixa}>
+        Abrir Caixa (Ctrl + Enter)
+      </GlassButton>
+      <button className="text-sm text-blue-600 hover:underline mt-4">
+        Ver detalhes do caixa
+      </button>
     </motion.div>
   );
 };

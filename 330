@@ -1,8 +1,8 @@
-import { NotaFiscalRepository } from '../../repositories/NotaFiscalRepository';
-import { NotaFiscalService } from '../NotaFiscalService';
-import { INotaFiscalService } from '../interfaces';
+import { OrdemCompraRepository } from '../../repositories/OrdemCompraRepository';
+import { OrdemCompraService } from '../OrdemCompraService';
+import { IOrdemCompraService } from '../interfaces';
 
-export const createNotaFiscalService = (): INotaFiscalService => {
-  const repository = new NotaFiscalRepository();
-  return new NotaFiscalService(repository);
+export const createOrdemCompraService = (): IOrdemCompraService => {
+  const repository = new OrdemCompraRepository();
+  return new OrdemCompraService(repository);
 };

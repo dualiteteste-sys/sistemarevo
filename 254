@@ -1,38 +1,85 @@
-import { supabase } from '../lib/supabaseClient';
-import { PostgrestError } from '@supabase/supabase-js';
-import { snakeToCamel } from '../lib/utils';
-import { Comissao } from '../types';
+import { BaseRepository } from './BaseRepository';
+		import { Empresa } from '../types/empresa';
+		import { camelToSnake, snakeToCamel } from '../lib/utils';
+		import { IConfiguracoesRepository } from './interfaces';
 
-export class ComissoesRepository {
-  protected supabase = supabase;
-  protected viewName: string = 'comissoes_view';
+		export class ConfiguracoesRepository extends BaseRepository<Empresa> implements IConfiguracoesRepository {
+		  constructor() {
+		    super('empresas');
+		  }
 
-  protected handleError(error: PostgrestError | null, context?: string): void {
-    if (error) {
-      console.error(`Error in ComissoesRepository${context ? ` (${context})` : ''}:`, error);
-      throw new Error(error.message);
-    }
-  }
+		  protected createEntity(data: any): Empresa {
+		    return data as Empresa;
+		  }
 
-  async findAll(options: { page?: number; pageSize?: number } = {}): Promise<{ data: Comissao[]; count: number }> {
-    const { page = 1, pageSize = 15 } = options;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+		  async findFirst(): Promise<Empresa | null> {
+		    const { data, error } = await this.supabase
+		      .from(this.tableName)
+		      .select(`
+		        *,
+		        substitutos_tributarios:empresa_substitutos_tributarios(*)
+		      `)
+		      .limit(1)
+		      .single();
 
-    // Otimizado: Seleciona apenas os campos necessários para a listagem.
-    const selectString = 'id, vendedor_nome, cliente_nome, data_venda, valor_venda, valor_comissao, status';
+		    if (error && error.code !== 'PGRST116') { // Ignora erro de "nenhuma linha encontrada"
+		      this.handleError(error, 'findFirst');
+		    }
 
-    const { data, error, count } = await this.supabase
-      .from(this.viewName)
-      .select(selectString, { count: 'exact' })
-      .order('data_venda', { ascending: false })
-      .range(from, to);
+		    return snakeToCamel(data) as Empresa | null;
+		  }
 
-    this.handleError(error, 'findAll');
-    
-    return {
-      data: (snakeToCamel(data || []) as Comissao[]),
-      count: count || 0,
-    };
-  }
-}
+		  async upsert(empresaData: Partial<Empresa>): Promise<Empresa> {
+		    const { substitutosTributarios, ...mainData } = empresaData;
+		    
+		    const { data: upsertedData, error } = await this.supabase
+		      .from(this.tableName)
+		      .upsert(camelToSnake(mainData))
+		      .select()
+		      .single();
+
+		    this.handleError(error, 'upsert');
+		    if (!upsertedData) throw new Error('Falha ao salvar dados da empresa.');
+
+		    const empresaId = upsertedData.id;
+
+		    // Sincroniza substitutos tributários
+		    const { error: deleteError } = await this.supabase
+		      .from('empresa_substitutos_tributarios')
+		      .delete()
+		      .eq('empresa_id', empresaId);
+		    this.handleError(deleteError, 'upsert (delete substitutos)');
+
+		    if (substitutosTributarios && substitutosTributarios.length > 0) {
+		      const substitutosParaInserir = substitutosTributarios.map(st => ({
+		        empresa_id: empresaId,
+		        uf: st.uf,
+		        ie: st.ie,
+		      }));
+		      const { error: insertError } = await this.supabase
+		        .from('empresa_substitutos_tributarios')
+		        .insert(substitutosParaInserir);
+		      this.handleError(insertError, 'upsert (insert substitutos)');
+		    }
+
+		    return (await this.findFirst())!;
+		  }
+
+		  async uploadLogo(file: File): Promise<string> {
+		    const filePath = `public/${Date.now()}-${file.name}`;
+		    const { error } = await this.supabase.storage
+		      .from('logos')
+		      .upload(filePath, file, {
+		        cacheControl: '3600',
+		        upsert: true,
+		      });
+
+		    if (error) {
+		      this.handleError(error, 'uploadLogo');
+		      throw new Error(error.message);
+		    }
+
+		    const { data } = this.supabase.storage.from('logos').getPublicUrl(filePath);
+		    return data.publicUrl;
+		  }
+		}

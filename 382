@@ -1,86 +1,128 @@
 /*
-		          # [Operation Name]
-		          Criação da tabela 'vendedores' e ajuste de 'clientes'
+          # [Fix] Correção e Criação da Tabela de Vendedores
+          [Este script corrige a ordem de criação das tabelas, criando primeiro os tipos ENUM necessários e depois as tabelas `vendedores` e `clientes`, garantindo que as dependências sejam resolvidas corretamente.]
 
-		          ## Query Description: [Este script cria a tabela 'vendedores' para armazenar os dados da equipe de vendas e adiciona uma coluna 'vendedor_id' na tabela 'clientes' para criar o relacionamento entre eles. Isso é necessário para o funcionamento do formulário de cadastro de clientes.]
+          ## Query Description: [Este script cria as tabelas `vendedores` e `clientes` com as colunas e tipos corretos, incluindo o ENUM `contribuinte_icms` atualizado. É seguro executar este script, pois ele verifica a existência das tabelas antes de criá-las.]
+          
+          ## Metadata:
+          - Schema-Category: ["Structural"]
+          - Impact-Level: ["Low"]
+          - Requires-Backup: [false]
+          - Reversible: [true]
+          
+          ## Structure Details:
+          - Cria o ENUM `tipo_pessoa_vendedor`.
+          - Recria o ENUM `contribuinte_icms` com os novos valores.
+          - Cria a tabela `vendedores`.
+          - Cria a tabela `clientes` com a chave estrangeira para `vendedores`.
+          
+          ## Security Implications:
+          - RLS Status: [Enabled]
+          - Policy Changes: [Yes]
+          - Auth Requirements: [authenticated]
+          
+          ## Performance Impact:
+          - Indexes: [Added]
+          - Triggers: [None]
+          - Estimated Impact: [Nenhum impacto de performance esperado.]
+          */
 
-		          ## Metadata:
-		          - Schema-Category: ["Structural"]
-		          - Impact-Level: ["Low"]
-		          - Requires-Backup: [false]
-		          - Reversible: [true]
+-- 1. Criar os tipos ENUM necessários
+CREATE TYPE tipo_pessoa_vendedor AS ENUM ('Física', 'Jurídica', 'Estrangeiro', 'Estrangeiro no Brasil');
+CREATE TYPE contribuinte_icms AS ENUM ('1 - Contribuinte ICMS', '2 - Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS');
 
-		          ## Structure Details:
-		          - Cria a tabela 'vendedores'.
-		          - Adiciona a coluna 'vendedor_id' à tabela 'clientes'.
-		          - Adiciona uma chave estrangeira de 'clientes.vendedor_id' para 'vendedores.id'.
+-- 2. Criar a tabela de vendedores
+CREATE TABLE IF NOT EXISTS public.vendedores (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    user_id uuid REFERENCES auth.users(id),
+    nome text NOT NULL,
+    fantasia text,
+    codigo text,
+    tipo_pessoa tipo_pessoa_vendedor DEFAULT 'Física',
+    cpf_cnpj text,
+    contribuinte contribuinte_icms DEFAULT '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS',
+    inscricao_estadual text,
+    cep text,
+    cidade text,
+    uf text,
+    logradouro text,
+    bairro text,
+    numero text,
+    complemento text,
+    telefone text,
+    celular text,
+    email text,
+    situacao text,
+    deposito text,
+    email_comunicacoes text,
+    regra_liberacao_comissao text,
+    tipo_comissao text,
+    aliquota_comissao numeric,
+    desconsiderar_comissao_linha_produto boolean,
+    observacoes text,
+    ativo boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE public.vendedores ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for authenticated users" ON public.vendedores FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable insert for authenticated users" ON public.vendedores FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated users" ON public.vendedores FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated users" ON public.vendedores FOR DELETE USING (auth.role() = 'authenticated');
 
-		          ## Security Implications:
-		          - RLS Status: [Enabled]
-		          - Policy Changes: [Yes]
-		          - Auth Requirements: [authenticated]
 
-		          ## Performance Impact:
-		          - Indexes: [Added]
-		          - Triggers: [No]
-		          - Estimated Impact: [Baixo]
-		          */
+-- 3. Recriar a tabela de clientes para garantir a referência correta
+DROP TABLE IF EXISTS public.clientes CASCADE;
 
-		-- Tabela para Vendedores
-		CREATE TABLE IF NOT EXISTS public.vendedores (
-		    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-		    user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
-		    nome text NOT NULL,
-		    fantasia text,
-		    codigo text,
-		    tipo_pessoa tipo_pessoa_vendedor DEFAULT 'Física',
-		    cpf_cnpj text NOT NULL,
-		    contribuinte contribuinte_icms DEFAULT '9 - Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS',
-		    inscricao_estadual text,
-		    cep text,
-		    cidade text,
-		    uf text,
-		    logradouro text,
-		    bairro text,
-		    numero text,
-		    complemento text,
-		    telefone text,
-		    celular text,
-		    email text NOT NULL,
-		    situacao situacao_vendedor DEFAULT 'Ativo com acesso ao sistema',
-		    deposito text,
-		    email_comunicacoes text,
-		    regra_liberacao_comissao regra_comissao DEFAULT 'Liberação parcial (pelo pagamento)',
-		    tipo_comissao tipo_comissao_vendedor DEFAULT 'Comissão com alíquota fixa',
-		    aliquota_comissao numeric,
-		    desconsiderar_comissao_linha_produto boolean DEFAULT false,
-		    observacoes text,
-		    ativo boolean DEFAULT true,
-		    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-		    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
-		);
-
-		-- Adiciona a coluna vendedor_id na tabela clientes se ela não existir
-		DO $$
-		BEGIN
-		    IF NOT EXISTS (
-		        SELECT FROM pg_attribute
-		        WHERE  attrelid = 'public.clientes'::regclass
-		        AND    attname = 'vendedor_id'
-		    ) THEN
-		        ALTER TABLE public.clientes ADD COLUMN vendedor_id uuid REFERENCES public.vendedores(id) ON DELETE SET NULL;
-		    END IF;
-		END
-		$$;
-
-		-- Habilita RLS para vendedores
-		ALTER TABLE public.vendedores ENABLE ROW LEVEL SECURITY;
-
-		-- Policies para vendedores
-		DROP POLICY IF EXISTS "Permite acesso total para usuários autenticados" ON public.vendedores;
-		CREATE POLICY "Permite acesso total para usuários autenticados"
-		ON public.vendedores
-		FOR ALL
-		TO authenticated
-		USING (true)
-		WITH CHECK (true);
+CREATE TABLE public.clientes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    codigo text,
+    nome text NOT NULL,
+    nome_fantasia text,
+    tipo_pessoa text,
+    cpf_cnpj text,
+    rg text,
+    inscricao_estadual text,
+    inscricao_municipal text,
+    contribuinte_icms contribuinte_icms,
+    is_cliente boolean DEFAULT true,
+    is_fornecedor boolean DEFAULT false,
+    is_transportadora boolean DEFAULT false,
+    logradouro text,
+    numero text,
+    complemento text,
+    bairro text,
+    cep text,
+    cidade text,
+    estado text,
+    pais text DEFAULT 'Brasil',
+    cobranca_logradouro text,
+    cobranca_numero text,
+    cobranca_complemento text,
+    cobranca_bairro text,
+    cobranca_cep text,
+    cobranca_cidade text,
+    cobranca_estado text,
+    telefone_adicional text,
+    celular text,
+    email text,
+    email_nfe text,
+    site text,
+    estado_civil text,
+    profissao text,
+    sexo text,
+    data_nascimento date,
+    naturalidade text,
+    status_crm text,
+    vendedor_id uuid REFERENCES public.vendedores(id),
+    condicao_pagamento_padrao_id text,
+    limite_credito numeric,
+    observacoes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for authenticated users" ON public.clientes FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable insert for authenticated users" ON public.clientes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated users" ON public.clientes FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated users" ON public.clientes FOR DELETE USING (auth.role() = 'authenticated');

@@ -1,34 +1,28 @@
-import { BaseRepository } from './BaseRepository';
-import { CrmOportunidade } from '../types';
-import { snakeToCamel } from '../lib/utils';
-
-export class CrmRepository extends BaseRepository<CrmOportunidade> {
-  constructor() {
-    super('crm_oportunidades');
-  }
-
-  protected createEntity(data: any): CrmOportunidade {
-    return data as CrmOportunidade;
-  }
-
-  async findAll(): Promise<CrmOportunidade[]> {
-    const selectString = `
-      id, titulo, etapa, valor_estimado,
-      cliente:clientes ( id, nome )
-    `;
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select(selectString)
-      .order('created_at', { ascending: false });
-
-    this.handleError(error, `findAll`);
-    
-    // Mapeia `titulo` para `nome` para compatibilidade com o frontend
-    const oportunidades = (snakeToCamel(data) || []).map((op: any) => ({
-      ...op,
-      nome: op.titulo,
-    }));
-
-    return oportunidades as CrmOportunidade[];
-  }
-}
+import { supabase } from '../lib/supabaseClient';
+		import { PostgrestError } from '@supabase/supabase-js';
+		import { DashboardStats, FaturamentoMensal } from '../types';
+		import { IDashboardRepository } from './interfaces';
+		export class DashboardRepository implements IDashboardRepository {
+		  protected supabase = supabase;
+		  protected handleError(error: PostgrestError | null, context?: string): void {
+		    if (error) {
+		      console.error(`Error in DashboardRepository${context ? ` (${context})` : ''}:`, error);
+		      throw new Error(error.message);
+		    }
+		  }
+		  async getDashboardStats(): Promise<DashboardStats> {
+		    console.warn('[Modo de Construção] Chamada para getDashboardStats bloqueada. Retornando dados zerados.');
+		    return Promise.resolve({
+		      faturamentoTotalMesAtual: 0,
+		      faturamentoTotalMesAnterior: 0,
+		      novosClientesMesAtual: 0,
+		      novosClientesMesAnterior: 0,
+		      pedidosRealizadosMesAtual: 0,
+		      pedidosRealizadosMesAnterior: 0,
+		    });
+		  }
+		  async getFaturamentoMensal(): Promise<FaturamentoMensal[]> {
+		    console.warn('[Modo de Construção] Chamada para getFaturamentoMensal bloqueada. Retornando dados vazios.');
+		    return Promise.resolve([]);
+		  }
+		}
