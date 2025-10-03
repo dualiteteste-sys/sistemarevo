@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Vendedor } from '../../types';
+import { Vendedor, ContribuinteICMS } from '../../types';
 import { VendedorFormData, vendedorSchema } from '../../schemas/vendedorSchema';
 import { GenericForm } from '../ui/GenericForm';
 import { IdentificacaoSection } from './form/IdentificacaoSection';
@@ -25,7 +25,7 @@ const getInitialData = (v?: Partial<Vendedor>): VendedorFormData => ({
   codigo: v?.codigo || '',
   tipoPessoa: v?.tipoPessoa || 'Física',
   cpfCnpj: v?.cpfCnpj || '',
-  contribuinte: v?.contribuinte || 'Não informado',
+  contribuinte: v?.contribuinte || ContribuinteICMS.NAO_CONTRIBUINTE,
   inscricaoEstadual: v?.inscricaoEstadual || '',
   cep: v?.cep || '',
   cidade: v?.cidade || '',

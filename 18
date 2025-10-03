@@ -17,7 +17,7 @@ export const DadosGeraisTab: React.FC<DadosGeraisTabProps> = ({ control, watch, 
 
   return (
     <div className="space-y-8">
-      <InformacoesGeraisSection control={control} watch={watch} />
+      <InformacoesGeraisSection control={control} watch={watch} setValue={setValue} />
       <EnderecoSection control={control} onBuscaCep={handleBuscaCep} />
       <ContatoSection control={control} setValue={setValue} />
     </div>
